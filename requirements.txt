@@ -1,2 +1,5 @@
 gunicorn==22.0.0
+Flask==3.0.0
+black==24.3.0
+mypy==1.15.0
 pymysql==1.1.1
