@@ -1,6 +1,6 @@
 FROM public.ecr.aws/docker/library/python:3.12-slim
 
-ENV PYTHONUNBUFFERED True
+ENV PYTHONUNBUFFERED=True
 ARG PORT=8080
 
 WORKDIR /app
