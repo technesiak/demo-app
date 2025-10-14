@@ -48,3 +48,9 @@ Apply any new migrations to the database if they exist since the last applicatio
 ```commandline
 docker compose exec -e FLASK_APP=main application flask db upgrade
 ```
+
+To test run:
+```commandline
+docker compose up --detach
+docker compose exec -T application python -m unittest
+```

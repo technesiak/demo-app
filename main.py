@@ -36,7 +36,6 @@ except ValueError as e:
 app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = db_dsn
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"poolclass": NullPool}
 db.init_app(app)
 migrate = Migrate(app, db)
 
