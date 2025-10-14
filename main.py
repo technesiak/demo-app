@@ -1,11 +1,15 @@
+import logging
 import os
 
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_migrate import Migrate, upgrade  # type: ignore
 
+from infrastructure.mysql.mysql_repository import MySQLRepository
 from models import db
 from sqlalchemy import NullPool, URL
+
+from routes.health_check import register_health_check_routes
 
 
 def validate_env_variable(env: str) -> str:
@@ -49,3 +53,10 @@ def hello() -> str:
 @with_appcontext
 def run_migrations() -> None:
     upgrade()
+
+
+logger = logging.getLogger(__name__)
+
+mysql_repository = MySQLRepository(db, logger)
+
+register_health_check_routes(app, mysql_repository)
