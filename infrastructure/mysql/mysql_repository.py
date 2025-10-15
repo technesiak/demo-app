@@ -1,7 +1,10 @@
 import logging
+from datetime import timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
+
+from models import Note
 
 
 class MySQLRepository:
@@ -16,3 +19,23 @@ class MySQLRepository:
         except Exception as error:
             self.logger.error(error, exc_info=True)
             return False
+
+    def get_by_id(self, note_id: int) -> Note | None:
+        result = (
+            self.db.session.query(Note)
+            .filter(
+                Note.id == note_id,
+            )
+            .first()
+        )
+        if result:
+            result.created_at = result.created_at.astimezone(timezone.utc)
+
+        return result
+
+    def add(self, note: Note) -> int:
+        self.db.session.add(note)
+        self.db.session.commit()
+        if note.id is None:
+            raise RuntimeError("Database did not return an ID")
+        return int(note.id)
