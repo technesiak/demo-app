@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 db = SQLAlchemy()
 
 
-class Record(db.Model):  # type: ignore
+class Note(db.Model):  # type: ignore
     __tablename__ = "notes"
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
