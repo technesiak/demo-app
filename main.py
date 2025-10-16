@@ -10,6 +10,7 @@ from models import db
 from sqlalchemy import NullPool, URL
 
 from routes.health_check import register_health_check_routes
+from routes.notes import register_notes_routes
 
 
 def validate_env_variable(env: str) -> str:
@@ -60,3 +61,4 @@ logger = logging.getLogger(__name__)
 mysql_repository = MySQLRepository(db, logger)
 
 register_health_check_routes(app, mysql_repository)
+register_notes_routes(app, mysql_repository)
