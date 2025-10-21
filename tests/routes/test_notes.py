@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import requests
 from flask import Flask
-from sqlalchemy import URL
+from sqlalchemy import URL, text
 
 from infrastructure.mysql.mysql_repository import MySQLRepository
 from main import validate_env_variable
@@ -50,12 +50,17 @@ class TestNotesRoutes(TestCase):
     def setUp(self) -> None:
         self.app_context = self.app.app_context()
         self.app_context.push()
-    '''
+
     def tearDown(self) -> None:
         with self.app.app_context():
+            db.session.execute(text("TRUNCATE TABLE notes"))
+            db.session.commit()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        with cls.app.app_context():
             db.session.query(Note).delete()
             db.session.commit()
-    '''
 
     def test_get_note_success(self) -> None:
         # given
@@ -69,16 +74,30 @@ class TestNotesRoutes(TestCase):
 
             self.assertIsNone(result_before)
 
-            db.session.add(
-                note
-            )
+            db.session.add(note)
             db.session.commit()
             if note.id is None:
                 raise RuntimeError("Database did not return an ID")
-            print(int(note.id))
 
         # when
         res = requests.get(APP_URL + f"/api/v1/notes/{int(note.id)}")
         # then
+
         self.assertEqual(res.status_code, HTTPStatus.OK)
-        self.assertEqual(res.text, '{}\n')
+
+        # Rozpakuj JSON
+        data = res.json()
+
+        # Sprawdzenia pola po polu
+        self.assertIn("id", data)
+        self.assertIsInstance(data["id"], int)
+        self.assertEqual(data["id"], 1)
+
+        self.assertIn("title", data)
+        self.assertEqual(data["title"], "Test Note")
+
+        self.assertIn("content", data)
+        self.assertEqual(data["content"], "Test Content")
+
+        self.assertIn("created_at", data)
+        self.assertIsInstance(data["created_at"], str)

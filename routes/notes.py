@@ -10,7 +10,7 @@ from infrastructure.mysql.mysql_repository import (
 
 def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
     @app.route("/api/v1/notes/<int:note_id>", methods=["GET"])
-    def get_note_route(note_id):
+    def get_note_route(note_id: int) -> tuple:
         try:
             note = get_note(repository, note_id)
             return (
@@ -30,13 +30,18 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
             return jsonify({"error": str(e)}), HTTPStatus.NOT_FOUND
 
     @app.route("/api/v1/notes", methods=["POST"])
-    def add_note_route():
+    def add_note_route() -> tuple:
         data = request.get_json() or {}
         title = data.get("title")
         content = data.get("content")
 
+        if title is None:
+            return jsonify({"error": "Missing title"}), HTTPStatus.BAD_REQUEST
+        if content is None:
+            return jsonify({"error": "Missing content"}), HTTPStatus.BAD_REQUEST
+
         try:
             note_id = add_note(repository, title, content)
-            return jsonify({"id": note_id}), HTTPStatus.CREATED
+            return jsonify({"id": note_id}), HTTPStatus.OK
         except ValidationError as e:
             return jsonify({"error": str(e)}), HTTPStatus.BAD_REQUEST
