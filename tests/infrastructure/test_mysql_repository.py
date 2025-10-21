@@ -2,7 +2,7 @@ import logging
 from unittest import TestCase
 
 from flask import Flask
-from sqlalchemy import NullPool, URL
+from sqlalchemy import URL, text
 
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
@@ -44,7 +44,7 @@ class TestMySQLRepository(TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         with cls.app.app_context():
-            db.session.query(Note).delete()
+            db.session.execute(text("TRUNCATE TABLE notes"))
             db.session.commit()
 
     def test_health_check_success(self) -> None:
