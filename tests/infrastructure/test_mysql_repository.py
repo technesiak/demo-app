@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from flask import Flask
 from sqlalchemy import URL, text
+from sqlalchemy.exc import IntegrityError
 
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
@@ -51,20 +52,6 @@ class TestMySQLRepository(TestCase):
         with self.app.app_context():
             self.assertTrue(self.repo.health_check())
 
-    def test_add_success(self) -> None:
-        # given
-        note = Note(title="Test", content="Some content")
-        # when
-        with self.app.app_context():
-            added_note_id = self.repo.add(note)
-
-            # then
-            fetched = self.repo.get_by_id(added_note_id)
-            if fetched is None:
-                self.fail("Note not found in database")
-            self.assertEqual(fetched.content, "Some content")
-            self.assertEqual(fetched.title, "Test")
-
     def test_get_by_id_success(self) -> None:
         # given
         note1 = Note(title="Test1", content="Some content1")
@@ -80,3 +67,32 @@ class TestMySQLRepository(TestCase):
                 self.fail("Note not found in database")
             self.assertEqual(fetched.content, "Some content2")
             self.assertEqual(fetched.title, "Test2")
+
+    def test_get_by_id_not_found(self) -> None:
+        # given
+        note_id = 1000
+        with self.app.app_context():
+
+            # when
+            fetched = self.repo.get_by_id(note_id)
+            self.assertEqual(fetched, None)
+
+    def test_add_success(self) -> None:
+        # given
+        note = Note(title="Test", content="Some content")
+        # when
+        with self.app.app_context():
+            added_note_id = self.repo.add(note)
+
+            # then
+            fetched = self.repo.get_by_id(added_note_id)
+            if fetched is None:
+                self.fail("Note not found in database")
+            self.assertEqual(fetched.content, "Some content")
+            self.assertEqual(fetched.title, "Test")
+
+    def test_add_note_without_title(self) -> None:
+        note = Note(content="Some content")
+        with self.app.app_context():
+            with self.assertRaises(IntegrityError):
+                self.repo.add(note)

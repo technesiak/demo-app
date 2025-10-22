@@ -85,10 +85,8 @@ class TestNotesRoutes(TestCase):
 
         self.assertEqual(res.status_code, HTTPStatus.OK)
 
-        # Rozpakuj JSON
         data = res.json()
 
-        # Sprawdzenia pola po polu
         self.assertIn("id", data)
         self.assertIsInstance(data["id"], int)
         self.assertEqual(data["id"], 1)
