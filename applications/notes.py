@@ -3,7 +3,9 @@ from models import Note
 
 
 class ValidationError(Exception):
-    pass
+    def __init__(self, message: str = "Validation Error") -> None:
+        self.message = message
+        super().__init__(self.message)
 
 
 class NotFoundError(Exception):
@@ -35,8 +37,10 @@ def add_note(repository: MySQLRepository, title: str, content: str) -> int:
 
 
 def _validate(title: str, content: str) -> None:
-    if not title or not content:
-        raise ValidationError("Title and content are required")
+    if not title:
+        raise ValidationError("Title is required")
+    if not content:
+        raise ValidationError("Content is required")
 
     if len(title) < MIN_TITLE_LEN or len(title) > MAX_TITLE_LEN:
         raise ValidationError(
