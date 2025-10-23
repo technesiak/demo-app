@@ -10,6 +10,7 @@ from applications.notes import (
     MAX_TITLE_LEN,
     MIN_CONTENT_LEN,
     MAX_CONTENT_LEN,
+    get_all_notes,
 )
 from models import Note
 
@@ -82,6 +83,53 @@ class TestNote(unittest.TestCase):
             str(context.exception),
             f"Content must be between {MIN_CONTENT_LEN} and {MAX_CONTENT_LEN} characters",
         )
+
+    def test_get_all_notes_returns_list_of_dicts(self) -> None:
+        # given
+        created_at_1 = "2025-10-23T17:50:37+00:00"
+        created_at_2 = "2025-10-23T18:50:37+00:00"
+
+        notes = [
+            Note(id=2, title="Title 1", content="Content 1", created_at=created_at_2),
+            Note(id=1, title="Title 2", content="Content 2", created_at=created_at_1),
+        ]
+
+        self.repo.get_notes.return_value = notes
+
+        # when
+        result = get_all_notes(self.repo)
+
+        # then
+        expected = [
+            {
+                "id": 2,
+                "title": "Title 1",
+                "content": "Content 1",
+                "created_at": created_at_2,
+            },
+            {
+                "id": 1,
+                "title": "Title 2",
+                "content": "Content 2",
+                "created_at": created_at_1,
+            },
+        ]
+
+        self.assertEqual(result, expected)
+        self.repo.get_notes.assert_called_once()
+
+    def test_get_all_notes_returns_empty_list(self) -> None:
+        # given
+        notes: list[Note] = []
+
+        self.repo.get_notes.return_value = notes
+
+        # when
+        result = get_all_notes(self.repo)
+
+        # then
+        self.assertEqual(result, [])
+        self.repo.get_notes.assert_called_once()
 
 
 if __name__ == "__main__":

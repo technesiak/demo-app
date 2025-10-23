@@ -6,6 +6,8 @@ from sqlalchemy.sql import text
 
 from models import Note
 
+# todo: proper solution for created_at
+
 
 class MySQLRepository:
     def __init__(self, db: SQLAlchemy, logger: logging.Logger):
@@ -39,3 +41,6 @@ class MySQLRepository:
         if note.id is None:
             raise RuntimeError("Database did not return an ID")
         return int(note.id)
+
+    def get_notes(self) -> list[Note]:
+        return self.db.session.query(Note).order_by(Note.id.desc()).all()
