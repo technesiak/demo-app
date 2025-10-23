@@ -146,6 +146,58 @@ class TestNotesRoutes(TestCase):
         data = res.json()
         self.assertEqual(data, {"error": "Invalid request body"})
 
+    def test_get_notes_returned_empty_list(self) -> None:
+        # given
+        expected_result: list[Note] = []
+        # when
+        res = requests.get(APP_URL + f"/api/v1/notes")
+        # then
+
+        self.assertEqual(res.status_code, HTTPStatus.OK)
+
+        data = res.json()
+
+        self.assertEqual(len(data), len(expected_result))
+        self.assertEqual(data, expected_result)
+
+    def test_get_notes_success(self) -> None:
+        # given
+        expected_result = [
+            {
+                "content": "second content",
+                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
+                "id": 2,
+                "title": "Second",
+            },
+            {
+                "content": "first content",
+                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
+                "id": 1,
+                "title": "First",
+            },
+        ]
+        with self.app.app_context():
+            note1 = Note(title="First", content="first content")
+            note2 = Note(title="Second", content="second content")
+
+            db.session.add(note1)
+            db.session.add(note2)
+            db.session.commit()
+
+        # when
+        res = requests.get(APP_URL + f"/api/v1/notes")
+        # then
+
+        self.assertEqual(res.status_code, HTTPStatus.OK)
+
+        data = res.json()
+
+        self.assertEqual(len(data), len(expected_result))
+        for got, expected in zip(data, expected_result):
+            self.assertEqual(got["id"], expected["id"])
+            self.assertEqual(got["title"], expected["title"])
+            self.assertEqual(got["content"], expected["content"])
+
 
 if __name__ == "__main__":
     unittest.main()

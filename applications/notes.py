@@ -51,3 +51,17 @@ def _validate(title: str, content: str) -> None:
         raise ValidationError(
             f"Content must be between {MIN_CONTENT_LEN} and {MAX_CONTENT_LEN} characters"
         )
+
+
+def get_all_notes(repository: MySQLRepository) -> list[dict]:
+    notes = repository.get_notes()
+    return [_to_dict(note) for note in notes]
+
+
+def _to_dict(note: Note) -> dict:
+    return {
+        "id": note.id,
+        "title": note.title,
+        "content": note.content,
+        "created_at": note.created_at,
+    }

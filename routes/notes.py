@@ -2,10 +2,18 @@ from http import HTTPStatus
 
 from flask import Flask, jsonify, request
 
-from applications.notes import get_note, NotFoundError, add_note, ValidationError
+from applications.notes import (
+    get_note,
+    NotFoundError,
+    add_note,
+    ValidationError,
+    get_all_notes,
+)
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
 )
+
+# todo: add proper logs for errors
 
 
 def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
@@ -54,6 +62,17 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
         except Exception as error:
             if isinstance(error, ValidationError):
                 return jsonify({"error": str(error)}), HTTPStatus.BAD_REQUEST
+            return (
+                jsonify({"error": "Internal error"}),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
+    @app.route("/api/v1/notes", methods=["GET"])
+    def get_notes() -> tuple:
+        try:
+            notes = get_all_notes(repository)
+            return jsonify(notes), 200
+        except Exception as error:
             return (
                 jsonify({"error": "Internal error"}),
                 HTTPStatus.INTERNAL_SERVER_ERROR,

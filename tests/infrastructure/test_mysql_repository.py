@@ -48,6 +48,11 @@ class TestMySQLRepository(TestCase):
             db.session.execute(text("TRUNCATE TABLE notes"))
             db.session.commit()
 
+    def tearDown(self) -> None:
+        with self.app.app_context():
+            db.session.execute(text("TRUNCATE TABLE notes"))
+            db.session.commit()
+
     def test_health_check_success(self) -> None:
         with self.app.app_context():
             self.assertTrue(self.repo.health_check())
@@ -96,3 +101,32 @@ class TestMySQLRepository(TestCase):
         with self.app.app_context():
             with self.assertRaises(IntegrityError):
                 self.repo.add(note)
+
+    def test_get_notes_returns_ordered_list(self) -> None:
+        # given
+        note1 = Note(title="First", content="first content")
+        note2 = Note(title="Second", content="second content")
+        with self.app.app_context():
+            self.repo.add(note1)
+            self.repo.add(note2)
+
+            # when
+            result = self.repo.get_notes()
+
+            # then
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0].id, 2)
+            self.assertEqual(result[1].id, 1)
+            self.assertEqual(result[0].title, "Second")
+            self.assertEqual(result[1].title, "First")
+            self.assertEqual(result[0].content, "second content")
+            self.assertEqual(result[1].content, "first content")
+
+    def test_get_notes_empty_list(self) -> None:
+
+        # when
+        with self.app.app_context():
+            result = self.repo.get_notes()
+
+            # then
+            self.assertEqual(result, [])

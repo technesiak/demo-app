@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ecdd7f50-b7d6-4285-92ef-8a14762776b0",
+		"_postman_id": "f5d49f5d-89f5-4fa9-83bd-675af81d1680",
 		"name": "Demo App",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "49441637"
+		"_exporter_id": "49442093",
+		"_collection_link": "https://technesiak-1619673.postman.co/workspace/Technesiak's-Workspace~697850ee-d2b7-4caa-8601-266fb9f115a1/collection/49442093-f5d49f5d-89f5-4fa9-83bd-675af81d1680?action=share&source=collection_link&creator=49442093"
 	},
 	"item": [
 		{
@@ -69,6 +70,26 @@
 					"port": "8080",
 					"path": [
 						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8080/api/v1/notes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/v1/notes",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"notes"
 					]
 				}
 			},
