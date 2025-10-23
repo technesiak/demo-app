@@ -1,5 +1,6 @@
 import logging
 import os
+import unittest
 from http import HTTPStatus
 from unittest import TestCase
 
@@ -99,3 +100,52 @@ class TestNotesRoutes(TestCase):
 
         self.assertIn("created_at", data)
         self.assertIsInstance(data["created_at"], str)
+
+    def test_add_note_success(self) -> None:
+        # given
+        payload = {"title": "test title", "content": "This is a test note."}
+
+        # when
+        res = requests.post(
+            url=APP_URL + f"/api/v1/notes",
+            json=payload,
+        )
+
+        # then
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("id", data)
+
+    def test_add_note_missing_fields(self) -> None:
+        # given
+        payload = {"title": "No Content"}
+
+        # when
+        res = requests.post(
+            url=APP_URL + f"/api/v1/notes",
+            json=payload,
+        )
+
+        # then
+        self.assertEqual(res.status_code, 400)
+        data = res.json()
+        assert data == {"error": "Missing content"}
+
+    def test_add_note_invalid_request(self) -> None:
+        # given
+        payload = ""
+
+        # when
+        res = requests.post(
+            url=APP_URL + f"/api/v1/notes",
+            json=payload,
+        )
+
+        # then
+        self.assertEqual(res.status_code, 400)
+        data = res.json()
+        self.assertEqual(data, {"error": "Invalid request body"})
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -8,6 +8,8 @@ from applications.notes import (
     ValidationError,
     MIN_TITLE_LEN,
     MAX_TITLE_LEN,
+    MIN_CONTENT_LEN,
+    MAX_CONTENT_LEN,
 )
 from models import Note
 
@@ -68,8 +70,19 @@ class TestNote(unittest.TestCase):
             f"Title must be between {MIN_TITLE_LEN} and {MAX_TITLE_LEN} characters",
         )
 
+    def test_add_note_invalid_content_raises(self) -> None:
+        with self.assertRaises(ValidationError) as context:
+            add_note(self.repo, "Some title", "")
+        self.assertEqual(str(context.exception), "Content is required")
 
-# todo: additional test for 'content required' and 'MIN/MAX content check'
+    def test_add_content_too_short_content(self) -> None:
+        with self.assertRaises(ValidationError) as context:
+            add_note(self.repo, "Some title", "abcd")
+        self.assertEqual(
+            str(context.exception),
+            f"Content must be between {MIN_CONTENT_LEN} and {MAX_CONTENT_LEN} characters",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
