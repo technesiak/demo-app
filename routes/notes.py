@@ -26,12 +26,20 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
                 ),
                 HTTPStatus.OK,
             )
-        except NotFoundError as e:
-            return jsonify({"error": str(e)}), HTTPStatus.NOT_FOUND
+        except Exception as error:
+            if isinstance(error, NotFoundError):
+                return jsonify({"error": str(error)}), HTTPStatus.NOT_FOUND
+            return (
+                jsonify({"error": "Internal error"}),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
 
     @app.route("/api/v1/notes", methods=["POST"])
     def add_note_route() -> tuple:
-        data = request.get_json() or {}
+        data = request.get_json()
+        if not isinstance(data, dict):
+            return jsonify({"error": "Invalid request body"}), HTTPStatus.BAD_REQUEST
+
         title = data.get("title")
         content = data.get("content")
 
@@ -43,5 +51,10 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
         try:
             note_id = add_note(repository, title, content)
             return jsonify({"id": note_id}), HTTPStatus.OK
-        except ValidationError as e:
-            return jsonify({"error": str(e)}), HTTPStatus.BAD_REQUEST
+        except Exception as error:
+            if isinstance(error, ValidationError):
+                return jsonify({"error": str(error)}), HTTPStatus.BAD_REQUEST
+            return (
+                jsonify({"error": "Internal error"}),
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
