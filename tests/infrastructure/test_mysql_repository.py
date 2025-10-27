@@ -61,17 +61,29 @@ class TestMySQLRepository(TestCase):
         # given
         note1 = Note(title="Test1", content="Some content1")
         note2 = Note(title="Test2", content="Some content2")
+        note3 = Note(title="Test3", content="Some content3", comment="Comment")
 
         with self.app.app_context():
             self.repo.add(note1)
             added_note2_id = self.repo.add(note2)
+            added_note3_id = self.repo.add(note3)
 
             # when
             fetched = self.repo.get_by_id(added_note2_id)
+            # then
             if fetched is None:
                 self.fail("Note not found in database")
             self.assertEqual(fetched.content, "Some content2")
             self.assertEqual(fetched.title, "Test2")
+            self.assertIsNone(fetched.comment)
+            # and when
+            fetched_note_3 = self.repo.get_by_id(added_note3_id)
+            # and then
+            if fetched_note_3 is None:
+                self.fail("Note not found in database")
+            self.assertEqual(fetched_note_3.content, "Some content3")
+            self.assertEqual(fetched_note_3.title, "Test3")
+            self.assertEqual(fetched_note_3.comment, "Comment")
 
     def test_get_by_id_not_found(self) -> None:
         # given
@@ -82,7 +94,7 @@ class TestMySQLRepository(TestCase):
             fetched = self.repo.get_by_id(note_id)
             self.assertEqual(fetched, None)
 
-    def test_add_success(self) -> None:
+    def test_add_success_without_comment(self) -> None:
         # given
         note = Note(title="Test", content="Some content")
         # when
@@ -95,6 +107,22 @@ class TestMySQLRepository(TestCase):
                 self.fail("Note not found in database")
             self.assertEqual(fetched.content, "Some content")
             self.assertEqual(fetched.title, "Test")
+            self.assertIsNone(fetched.comment)
+
+    def test_add_success_with_comment(self) -> None:
+        # given
+        note = Note(title="Test", content="Some content", comment="Comment")
+        # when
+        with self.app.app_context():
+            added_note_id = self.repo.add(note)
+
+            # then
+            fetched = self.repo.get_by_id(added_note_id)
+            if fetched is None:
+                self.fail("Note not found in database")
+            self.assertEqual(fetched.content, "Some content")
+            self.assertEqual(fetched.title, "Test")
+            self.assertEqual(fetched.comment, "Comment")
 
     def test_add_note_without_title(self) -> None:
         note = Note(content="Some content")
@@ -105,7 +133,7 @@ class TestMySQLRepository(TestCase):
     def test_get_notes_returns_ordered_list(self) -> None:
         # given
         note1 = Note(title="First", content="first content")
-        note2 = Note(title="Second", content="second content")
+        note2 = Note(title="Second", content="second content", comment="comment")
         with self.app.app_context():
             self.repo.add(note1)
             self.repo.add(note2)
@@ -116,11 +144,13 @@ class TestMySQLRepository(TestCase):
             # then
             self.assertEqual(len(result), 2)
             self.assertEqual(result[0].id, 2)
-            self.assertEqual(result[1].id, 1)
             self.assertEqual(result[0].title, "Second")
-            self.assertEqual(result[1].title, "First")
             self.assertEqual(result[0].content, "second content")
+            self.assertEqual(result[0].comment, "comment")
+            self.assertEqual(result[1].id, 1)
+            self.assertEqual(result[1].title, "First")
             self.assertEqual(result[1].content, "first content")
+            self.assertIsNone(result[1].comment)
 
     def test_get_notes_empty_list(self) -> None:
 

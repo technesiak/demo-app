@@ -14,3 +14,4 @@ class Note(db.Model):  # type: ignore
     created_at = db.Column(
         db.DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    comment = db.Column(db.Text(100), nullable=True)
