@@ -31,8 +31,9 @@ class TestNote(unittest.TestCase):
 
         # then
         self.repo.get_by_id.assert_called_once_with(1)
-        self.assertEqual(result.title, expected_title)
-        self.assertEqual(result.content, expected_content)
+        self.assertEqual(result["title"], expected_title)
+        self.assertEqual(result["content"], expected_content)
+        self.assertIsNone(result["comment"])
 
     def test_get_note_not_found_raises(self) -> None:
         # given
@@ -43,20 +44,36 @@ class TestNote(unittest.TestCase):
             get_note(self.repo, 42)
         self.repo.get_by_id.assert_called_once_with(42)
 
-    def test_add_note_success(self) -> None:
+    def test_add_note_success_without_comment(self) -> None:
         # given
         expected_note_id = 123
         self.repo.add.return_value = expected_note_id
 
         # when
-        note_id = add_note(self.repo, "Valid Title", "Valid content")
+        note_id = add_note(self.repo, "Valid title", "Valid content")
 
         # then
         self.assertEqual(note_id, expected_note_id)
 
         added_note = self.repo.add.call_args[0][0]
-        self.assertEqual(added_note.title, "Valid Title")
+        self.assertEqual(added_note.title, "Valid title")
         self.assertEqual(added_note.content, "Valid content")
+
+    def test_add_note_success_with_comment(self) -> None:
+        # given
+        expected_note_id = 123
+        self.repo.add.return_value = expected_note_id
+
+        # when
+        note_id = add_note(self.repo, "Valid title", "Valid content", "Valid comment")
+
+        # then
+        self.assertEqual(note_id, expected_note_id)
+
+        added_note = self.repo.add.call_args[0][0]
+        self.assertEqual(added_note.title, "Valid title")
+        self.assertEqual(added_note.content, "Valid content")
+        self.assertEqual(added_note.comment, "Valid comment")
 
     def test_add_note_invalid_title_raises(self) -> None:
         with self.assertRaises(ValidationError) as context:
@@ -90,8 +107,20 @@ class TestNote(unittest.TestCase):
         created_at_2 = "2025-10-23T18:50:37+00:00"
 
         notes = [
-            Note(id=2, title="Title 1", content="Content 1", created_at=created_at_2),
-            Note(id=1, title="Title 2", content="Content 2", created_at=created_at_1),
+            Note(
+                id=2,
+                title="Title 1",
+                content="Content 1",
+                created_at=created_at_2,
+                comment="Comment 1",
+            ),
+            Note(
+                id=1,
+                title="Title 2",
+                content="Content 2",
+                created_at=created_at_1,
+                comment=None,
+            ),
         ]
 
         self.repo.get_notes.return_value = notes
@@ -106,12 +135,14 @@ class TestNote(unittest.TestCase):
                 "title": "Title 1",
                 "content": "Content 1",
                 "created_at": created_at_2,
+                "comment": "Comment 1",
             },
             {
                 "id": 1,
                 "title": "Title 2",
                 "content": "Content 2",
                 "created_at": created_at_1,
+                "comment": None,
             },
         ]
 

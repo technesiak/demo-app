@@ -18,25 +18,29 @@ MIN_CONTENT_LEN = 5
 MAX_CONTENT_LEN = 2000
 MIN_TITLE_LEN = 3
 MAX_TITLE_LEN = 255
+MIN_COMMENT_LEN = 3
+MAX_COMMENT_LEN = 100
 
 
 def get_note(
     repository: MySQLRepository,
     note_id: int,
-) -> Note:
+) -> dict:
     note = repository.get_by_id(note_id)
     if not note:
         raise NotFoundError()
-    return note
+    return _to_dict(note)
 
 
-def add_note(repository: MySQLRepository, title: str, content: str) -> int:
-    _validate(title, content)
-    new_note = Note(title=title, content=content)
+def add_note(
+    repository: MySQLRepository, title: str, content: str, comment: str | None = None
+) -> int:
+    _validate(title, content, comment)
+    new_note = Note(title=title, content=content, comment=comment)
     return repository.add(new_note)
 
 
-def _validate(title: str, content: str) -> None:
+def _validate(title: str, content: str, comment: str | None = None) -> None:
     if not title:
         raise ValidationError("Title is required")
     if not content:
@@ -52,6 +56,12 @@ def _validate(title: str, content: str) -> None:
             f"Content must be between {MIN_CONTENT_LEN} and {MAX_CONTENT_LEN} characters"
         )
 
+    if comment:
+        if len(comment) < MIN_COMMENT_LEN or len(comment) > MAX_COMMENT_LEN:
+            raise ValidationError(
+                f"Comment must be between {MIN_COMMENT_LEN} and {MAX_COMMENT_LEN} characters"
+            )
+
 
 def get_all_notes(repository: MySQLRepository) -> list[dict]:
     notes = repository.get_notes()
@@ -64,4 +74,5 @@ def _to_dict(note: Note) -> dict:
         "title": note.title,
         "content": note.content,
         "created_at": note.created_at,
+        "comment": note.comment,
     }

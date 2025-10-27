@@ -22,16 +22,7 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
         try:
             note = get_note(repository, note_id)
             return (
-                jsonify(
-                    {
-                        "id": note.id,
-                        "title": note.title,
-                        "content": note.content,
-                        "created_at": (
-                            note.created_at.isoformat() if note.created_at else None
-                        ),
-                    }
-                ),
+                jsonify(note),
                 HTTPStatus.OK,
             )
         except Exception as error:
@@ -50,6 +41,7 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
 
         title = data.get("title")
         content = data.get("content")
+        comment = data.get("comment")
 
         if title is None:
             return jsonify({"error": "Missing title"}), HTTPStatus.BAD_REQUEST
@@ -57,7 +49,7 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
             return jsonify({"error": "Missing content"}), HTTPStatus.BAD_REQUEST
 
         try:
-            note_id = add_note(repository, title, content)
+            note_id = add_note(repository, title, content, comment)
             return jsonify({"id": note_id}), HTTPStatus.OK
         except Exception as error:
             if isinstance(error, ValidationError):
