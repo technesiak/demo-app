@@ -1,0 +1,140 @@
+openapi: 3.0.0
+info:
+  title: Notes API
+  version: 1.0.0
+  description: API for managing notes
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /api/v1/notes/{note_id}:
+    get:
+      summary: Get a note by its ID
+      description: Retrieves a note based on the provided note_id.
+      operationId: getNote
+      parameters:
+        - name: note_id
+          in: path
+          required: true
+          description: The ID of the note
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Note found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/notes:
+    get:
+      summary: Get all notes
+      description: Retrieves a list of all notes.
+      operationId: getAllNotes
+      responses:
+        '200':
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a new note
+      description: Creates a new note with a title and content.
+      operationId: addNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewNoteRequest'
+      responses:
+        '200':
+          description: Note created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Bad request (missing or invalid fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Note:
+      type: object
+      description: A note object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          minLength: 3
+          maxLength: 255
+          example: "My Note Title"
+        content:
+          type: string
+          minLength: 5
+          maxLength: 2000
+          example: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.."
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-10-26T15:30:00Z"
+
+    NewNoteRequest:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+          example: Meeting notes
+        content:
+          type: string
+          example: Discussed project roadmap and deadlines.
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Note not found
+
