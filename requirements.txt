@@ -8,3 +8,5 @@ Flask-Migrate==4.1.0
 types-Flask==1.1.6
 requests==2.32.5
 types-requests==2.32.0.20241016
+flask-cors==6.0.1
+types-Flask-Cors==6.0.0.20250809

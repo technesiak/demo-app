@@ -1,6 +1,8 @@
+import os
 from http import HTTPStatus
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 from applications.notes import (
     get_note,
@@ -16,7 +18,18 @@ from infrastructure.mysql.mysql_repository import (
 # todo: add proper logs for errors
 
 
+def _validate_env_variable(env: str) -> str:
+    if env not in os.environ:
+        raise ValueError("{} not found in environment variables.".format(env))
+    return os.environ[env]
+
+
 def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
+    # Enable CORS in dev environment for Swagger UI only
+    # THIS IS ONLY FOR DEMO APP PURPOSE
+    environment = _validate_env_variable("SERVICE_ENVIRONMENT")
+    if environment == "dev":
+        CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
     @app.route("/api/v1/notes/<int:note_id>", methods=["GET"])
     def get_note_route(note_id: int) -> tuple:
         try:
