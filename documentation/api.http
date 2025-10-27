@@ -17,7 +17,8 @@ Accept: application/json
 
 {
   "title": "My new note",
-  "content": "This is a sample note created for testing."
+  "content": "This is a sample note created for testing.",
+  "comment": "Random comment"
 }
 
 ###

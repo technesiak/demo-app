@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Notes API
   version: 1.0.0
@@ -11,7 +11,6 @@ paths:
     get:
       summary: Get a note by its ID
       description: Retrieves a note based on the provided note_id.
-      operationId: getNote
       parameters:
         - name: note_id
           in: path
@@ -21,7 +20,7 @@ paths:
             type: integer
       responses:
         '200':
-          description: Note found
+          description: Note retrieved successfully
           content:
             application/json:
               schema:
@@ -31,19 +30,18 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
   /api/v1/notes:
     get:
       summary: Get all notes
       description: Retrieves a list of all notes.
-      operationId: getAllNotes
       responses:
         '200':
           description: List of notes
@@ -58,18 +56,34 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
     post:
       summary: Create a new note
-      description: Creates a new note with a title and content.
-      operationId: addNote
+      description: Creates a new note with a title, content and an optional comment.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewNoteRequest'
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  minLength: 3    # MIN_TITLE_LEN
+                  maxLength: 255  # MAX_TITLE_LEN
+                content:
+                  type: string
+                  minLength: 5    # MIN_CONTENT_LEN
+                  maxLength: 2000 # MAX_CONTENT_LEN
+                comment:
+                  type: string
+                  nullable: true
+                  minLength: 3    # MIN_COMMENT_LEN
+                  maxLength: 100  # MAX_COMMENT_LEN
       responses:
         '200':
           description: Note created successfully
@@ -80,61 +94,50 @@ paths:
                 properties:
                   id:
                     type: integer
-                    example: 42
         '400':
-          description: Bad request (missing or invalid fields)
+          description: Bad request (validation error)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
     Note:
       type: object
-      description: A note object
-      properties:
-        id:
-          type: integer
-          example: 1
-        title:
-          type: string
-          minLength: 3
-          maxLength: 255
-          example: "My Note Title"
-        content:
-          type: string
-          minLength: 5
-          maxLength: 2000
-          example: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.."
-        created_at:
-          type: string
-          format: date-time
-          example: "2025-10-26T15:30:00Z"
-
-    NewNoteRequest:
-      type: object
       required:
+        - id
         - title
         - content
       properties:
+        id:
+          type: integer
+          description: Unique identifier of the note
         title:
           type: string
-          example: Meeting notes
+          description: Title of the note
+          minLength: 3
+          maxLength: 255
         content:
           type: string
-          example: Discussed project roadmap and deadlines.
+          description: Content of the note
+          minLength: 5
+          maxLength: 2000
+        comment:
+          type: string
+          nullable: true
+          description: Optional comment for the note
+          minLength: 3
+          maxLength: 100
 
-    ErrorResponse:
+    Error:
       type: object
       properties:
         error:
           type: string
-          example: Note not found
-

@@ -20,6 +20,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      swagger-ui:
+        condition: service_healthy
     networks:
       - test-network
 
@@ -34,6 +36,23 @@ services:
       - "3306:3306"
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "db", "-udb_user", "-pdb_password" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - test-network
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.29.5
+    ports:
+        - "8081:8080"
+    environment:
+      - SWAGGER_JSON=/openapi/openapi.yaml
+    volumes:
+      - ./documentation/openapi:/openapi
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
       interval: 10s
       timeout: 5s
       retries: 5
