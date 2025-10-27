@@ -30,6 +30,7 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
     environment = _validate_env_variable("SERVICE_ENVIRONMENT")
     if environment == "dev":
         CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
+
     @app.route("/api/v1/notes/<int:note_id>", methods=["GET"])
     def get_note_route(note_id: int) -> tuple:
         try:
