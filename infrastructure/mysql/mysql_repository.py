@@ -42,5 +42,16 @@ class MySQLRepository:
             raise RuntimeError("Database did not return an ID")
         return int(note.id)
 
-    def get_notes(self) -> list[Note]:
-        return self.db.session.query(Note).order_by(Note.id.desc()).all()
+    def get_notes(
+        self, limit: int = 5, last_id: int | None = None
+    ) -> tuple[list["Note"], bool]:
+        query = self.db.session.query(Note).order_by(Note.id.desc())
+
+        if last_id is not None:
+            query = query.filter(Note.id < last_id)
+
+        results: list[Note] = query.limit(limit + 1).all()
+        has_more = len(results) > limit
+        notes = results[:limit]
+
+        return notes, has_more

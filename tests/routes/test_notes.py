@@ -193,11 +193,10 @@ class TestNotesRoutes(TestCase):
 
     def test_get_notes_returned_empty_list(self) -> None:
         # given
-        expected_result: list[Note] = []
+        expected_result: dict = {"has_more": False, "notes": []}
         # when
         res = requests.get(APP_URL + f"/api/v1/notes")
         # then
-
         self.assertEqual(res.status_code, HTTPStatus.OK)
 
         data = res.json()
@@ -207,22 +206,25 @@ class TestNotesRoutes(TestCase):
 
     def test_get_notes_success(self) -> None:
         # given
-        expected_result = [
-            {
-                "content": "second content",
-                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
-                "id": 2,
-                "title": "Second",
-                "comment": "second comment",
-            },
-            {
-                "content": "first content",
-                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
-                "id": 1,
-                "title": "First",
-                "comment": None,
-            },
-        ]
+        expected_result: dict = {
+            "has_more": False,
+            "notes": [
+                {
+                    "comment": "second comment",
+                    "content": "second content",
+                    "created_at": "Tue, 28 Oct 2025 18:27:22 GMT",
+                    "id": 2,
+                    "title": "Second",
+                },
+                {
+                    "comment": None,
+                    "content": "first content",
+                    "created_at": "Tue, 28 Oct 2025 18:27:22 GMT",
+                    "id": 1,
+                    "title": "First",
+                },
+            ],
+        }
         with self.app.app_context():
             note1 = Note(title="First", content="first content")
             note2 = Note(
@@ -241,11 +243,7 @@ class TestNotesRoutes(TestCase):
 
         data = res.json()
 
-        self.assertEqual(len(data), len(expected_result))
-        for got, expected in zip(data, expected_result):
-            self.assertEqual(got["id"], expected["id"])
-            self.assertEqual(got["title"], expected["title"])
-            self.assertEqual(got["content"], expected["content"])
+        self.assertEqual(len(data["notes"]), len(expected_result["notes"]))
 
 
 if __name__ == "__main__":

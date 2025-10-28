@@ -10,6 +10,7 @@ from applications.notes import (
     add_note,
     ValidationError,
     get_all_notes,
+    MaxLimitExceededError,
 )
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
@@ -75,10 +76,28 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
 
     @app.route("/api/v1/notes", methods=["GET"])
     def get_notes() -> tuple:
+        limit = request.args.get("limit")
+        if limit is not None:
+            try:
+                limit = int(limit)
+            except ValueError:
+                return jsonify({"error": "Invalid limit"}), HTTPStatus.BAD_REQUEST
+
+        last_id = request.args.get("last_id")
+        if last_id is not None:
+            try:
+                last_id = int(last_id)
+                if last_id <= 0:
+                    raise ValueError
+            except ValueError:
+                return jsonify({"error": "Invalid last_id"}), HTTPStatus.BAD_REQUEST
+
         try:
-            notes = get_all_notes(repository)
-            return jsonify(notes), 200
+            notes_data = get_all_notes(repository, limit, last_id)
+            return jsonify(notes_data), HTTPStatus.OK
         except Exception as error:
+            if isinstance(error, MaxLimitExceededError):
+                return jsonify({"error": str(error)}), HTTPStatus.CONFLICT
             return (
                 jsonify({"error": "Internal error"}),
                 HTTPStatus.INTERNAL_SERVER_ERROR,

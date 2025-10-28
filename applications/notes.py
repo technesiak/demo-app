@@ -14,12 +14,20 @@ class NotFoundError(Exception):
         super().__init__(self.message)
 
 
+class MaxLimitExceededError(Exception):
+    def __init__(self, message: str = "Max limit exceeded") -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
 MIN_CONTENT_LEN = 5
 MAX_CONTENT_LEN = 2000
 MIN_TITLE_LEN = 3
 MAX_TITLE_LEN = 255
 MIN_COMMENT_LEN = 3
 MAX_COMMENT_LEN = 100
+MAX_LIMIT = 10
+DEFAULT_LIMIT = 5
 
 
 def get_note(
@@ -63,9 +71,18 @@ def _validate(title: str, content: str, comment: str | None = None) -> None:
             )
 
 
-def get_all_notes(repository: MySQLRepository) -> list[dict]:
-    notes = repository.get_notes()
-    return [_to_dict(note) for note in notes]
+def get_all_notes(
+    repository: MySQLRepository, limit: int | None, last_id: int | None = None
+) -> dict:
+    if limit and limit > MAX_LIMIT:
+        raise MaxLimitExceededError()
+    if not limit:
+        limit = DEFAULT_LIMIT
+    notes, has_more = repository.get_notes(limit, last_id)
+    return {
+        "notes": [_to_dict(note) for note in notes],
+        "has_more": has_more,
+    }
 
 
 def _to_dict(note: Note) -> dict:
