@@ -1,5 +1,11 @@
-### Get all notes
+### Get all notes (default pagination)
 GET http://localhost:8080/api/v1/notes
+Accept: application/json
+
+###
+
+### Get all notes with limit and last_id (pagination)
+GET http://localhost:8080/api/v1/notes?limit=2&last_id=3
 Accept: application/json
 
 ###

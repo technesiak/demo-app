@@ -139,24 +139,74 @@ class TestMySQLRepository(TestCase):
             self.repo.add(note2)
 
             # when
-            result = self.repo.get_notes()
+            notes, has_more = self.repo.get_notes()
 
             # then
-            self.assertEqual(len(result), 2)
-            self.assertEqual(result[0].id, 2)
-            self.assertEqual(result[0].title, "Second")
-            self.assertEqual(result[0].content, "second content")
-            self.assertEqual(result[0].comment, "comment")
-            self.assertEqual(result[1].id, 1)
-            self.assertEqual(result[1].title, "First")
-            self.assertEqual(result[1].content, "first content")
-            self.assertIsNone(result[1].comment)
+            self.assertEqual(len(notes), 2)
+            self.assertFalse(has_more)
+            self.assertEqual(notes[0].id, 2)
+            self.assertEqual(notes[0].title, "Second")
+            self.assertEqual(notes[0].content, "second content")
+            self.assertEqual(notes[0].comment, "comment")
+            self.assertEqual(notes[1].id, 1)
+            self.assertEqual(notes[1].title, "First")
+            self.assertEqual(notes[1].content, "first content")
+            self.assertIsNone(notes[1].comment)
 
     def test_get_notes_empty_list(self) -> None:
 
         # when
         with self.app.app_context():
-            result = self.repo.get_notes()
+            notes, has_more = self.repo.get_notes()
 
             # then
-            self.assertEqual(result, [])
+            self.assertEqual(notes, [])
+            self.assertFalse(has_more)
+
+    def test_get_notes_returns_ordered_list_limit_was_given(self) -> None:
+        # given
+        note1 = Note(title="First", content="first content")
+        note2 = Note(title="Second", content="second content", comment="comment")
+        with self.app.app_context():
+            self.repo.add(note1)
+            self.repo.add(note2)
+
+            # when
+            notes, has_more = self.repo.get_notes(limit=1)
+
+            # then
+            self.assertEqual(len(notes), 1)
+            self.assertTrue(has_more)
+            self.assertEqual(notes[0].id, 2)
+            self.assertEqual(notes[0].title, "Second")
+            self.assertEqual(notes[0].content, "second content")
+            self.assertEqual(notes[0].comment, "comment")
+
+    def test_get_notes_returns_ordered_list_limit_and_last_id_were_given(self) -> None:
+        # given
+        note1 = Note(title="First", content="first content")
+        note2 = Note(title="Second", content="second content", comment="comment")
+        note3 = Note(title="Third", content="third content", comment="comment2")
+        note4 = Note(title="Fourth", content="fourth content")
+        note5 = Note(title="Fifth", content="fifth content")
+        with self.app.app_context():
+            self.repo.add(note1)
+            self.repo.add(note2)
+            note3_id = self.repo.add(note3)
+            self.repo.add(note4)
+            self.repo.add(note5)
+
+            # when
+            notes, has_more = self.repo.get_notes(limit=2, last_id=note3_id)
+
+            # then
+            self.assertEqual(len(notes), 2)
+            self.assertFalse(has_more)
+            self.assertEqual(notes[0].id, 2)
+            self.assertEqual(notes[0].title, "Second")
+            self.assertEqual(notes[0].content, "second content")
+            self.assertEqual(notes[0].comment, "comment")
+            self.assertEqual(notes[1].id, 1)
+            self.assertEqual(notes[1].title, "First")
+            self.assertEqual(notes[1].content, "first content")
+            self.assertIsNone(notes[1].comment)

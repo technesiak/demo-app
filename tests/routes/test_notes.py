@@ -193,59 +193,142 @@ class TestNotesRoutes(TestCase):
 
     def test_get_notes_returned_empty_list(self) -> None:
         # given
-        expected_result: list[Note] = []
+        expected_result = {"has_more": False, "notes": []}
+
         # when
-        res = requests.get(APP_URL + f"/api/v1/notes")
+        res = requests.get(url=APP_URL + f"/api/v1/notes")
+
         # then
-
         self.assertEqual(res.status_code, HTTPStatus.OK)
-
         data = res.json()
 
-        self.assertEqual(len(data), len(expected_result))
         self.assertEqual(data, expected_result)
 
-    def test_get_notes_success(self) -> None:
+    def test_get_notes_success_with_data(self) -> None:
         # given
-        expected_result = [
-            {
-                "content": "second content",
-                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
-                "id": 2,
-                "title": "Second",
-                "comment": "second comment",
-            },
-            {
-                "content": "first content",
-                "created_at": "Thu, 23 Oct 2025 18:18:28 GMT",
-                "id": 1,
-                "title": "First",
-                "comment": None,
-            },
-        ]
         with self.app.app_context():
             note1 = Note(title="First", content="first content")
             note2 = Note(
                 title="Second", content="second content", comment="second comment"
             )
-
-            db.session.add(note1)
-            db.session.add(note2)
+            db.session.add_all([note1, note2])
             db.session.commit()
 
-        # when
-        res = requests.get(APP_URL + f"/api/v1/notes")
-        # then
+            created_at_1 = note1.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT")
+            created_at_2 = note2.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT")
 
+        expected_result: dict = {
+            "has_more": False,
+            "notes": [
+                {
+                    "id": note2.id,
+                    "title": "Second",
+                    "content": "second content",
+                    "comment": "second comment",
+                    "created_at": created_at_2,
+                },
+                {
+                    "id": note1.id,
+                    "title": "First",
+                    "content": "first content",
+                    "comment": None,
+                    "created_at": created_at_1,
+                },
+            ],
+        }
+
+        # when
+        res = requests.get(url=APP_URL + "/api/v1/notes")
+
+        # then
         self.assertEqual(res.status_code, HTTPStatus.OK)
 
-        data = res.json()
+        data: dict = res.json()
+        self.assertEqual(len(data["notes"]), 2)
+        self.assertEqual(data["has_more"], expected_result["has_more"])
 
-        self.assertEqual(len(data), len(expected_result))
-        for got, expected in zip(data, expected_result):
-            self.assertEqual(got["id"], expected["id"])
-            self.assertEqual(got["title"], expected["title"])
-            self.assertEqual(got["content"], expected["content"])
+        expected_notes: list[dict] = expected_result["notes"]
+        actual_notes: list[dict] = list(data["notes"])
+
+        for expected, actual in zip(expected_notes, actual_notes):
+            self.assertEqual(expected["id"], actual["id"])
+            self.assertEqual(expected["title"], actual["title"])
+            self.assertEqual(expected["content"], actual["content"])
+            self.assertEqual(expected["comment"], actual["comment"])
+            self.assertEqual(expected["created_at"], actual["created_at"])
+
+    def test_get_notes_with_limit_and_last_id(self) -> None:
+        # given
+        with self.app.app_context():
+            for i in range(1, 6):
+                db.session.add(Note(title=f"Note {i}", content=f"Content {i}"))
+            db.session.commit()
+
+            notes = Note.query.order_by(Note.id.desc()).all()
+            notes_dict: list[dict] = [
+                {
+                    "id": note.id,
+                    "title": note.title,
+                    "content": note.content,
+                    "comment": note.comment,
+                    "created_at": note.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+                }
+                for note in notes
+            ]
+
+        res = requests.get(APP_URL + "/api/v1/notes?limit=2&last_id=3")
+
+        # then
+        self.assertEqual(res.status_code, HTTPStatus.OK)
+        data: dict = res.json()
+
+        expected_notes: list[dict] = [n for n in notes_dict if n["id"] < 3]
+        expected_notes = expected_notes[:2]
+        expected_result: dict = {
+            "has_more": False,
+            "notes": expected_notes,
+        }
+
+        self.assertIn("notes", data)
+        self.assertIn("has_more", data)
+        self.assertLessEqual(len(data["notes"]), 2)
+
+        actual_notes: list[dict] = list(data["notes"])
+        for expected, actual in zip(expected_notes, actual_notes):
+            self.assertEqual(expected["id"], actual["id"])
+            self.assertEqual(expected["title"], actual["title"])
+            self.assertEqual(expected["content"], actual["content"])
+            self.assertEqual(expected["comment"], actual["comment"])
+            self.assertEqual(expected["created_at"], actual["created_at"])
+
+        self.assertEqual(data["has_more"], expected_result["has_more"])
+
+    def test_get_notes_max_limit_exceeded(self) -> None:
+        # when
+        res = requests.get(url=APP_URL + f"/api/v1/notes?limit=9999")
+
+        # then
+        self.assertEqual(res.status_code, HTTPStatus.CONFLICT)
+        data = res.json()
+        self.assertEqual(data["error"], "Max limit exceeded")
+
+    def test_get_notes_invalid_limit(self) -> None:
+        # when
+        res = requests.get(url=APP_URL + f"/api/v1/notes?limit=abc")
+
+        # then
+        data = res.json()
+        self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(data["error"], "Invalid limit parameter")
+
+    def test_get_notes_invalid_last_id(self) -> None:
+        # when
+        res = requests.get(url=APP_URL + f"/api/v1/notes?limit=1&last_id=abc")
+
+        # then
+        data = res.json()
+        self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(data["error"], "Invalid last_id parameter")
 
 
 if __name__ == "__main__":
