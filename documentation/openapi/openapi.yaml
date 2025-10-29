@@ -41,16 +41,48 @@ paths:
   /api/v1/notes:
     get:
       summary: Get all notes
-      description: Retrieves a list of all notes.
+      description: Retrieves a list of notes with optional pagination.
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of notes to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10  # MAX_LIMIT
+        - name: last_id
+          in: query
+          description: The last note ID seen, used for pagination
+          required: false
+          schema:
+            type: integer
       responses:
         '200':
-          description: List of notes
+          description: List of notes with pagination
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Note'
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  has_more:
+                    type: boolean
+        '400':
+          description: Bad request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Max limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
           content:
