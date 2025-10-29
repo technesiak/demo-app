@@ -128,7 +128,7 @@ class TestNote(unittest.TestCase):
         self.repo.get_notes.return_value = notes, has_more
 
         # when
-        result = get_all_notes(self.repo, None)
+        result = get_all_notes(self.repo, limit=None)
 
         # then
         expected = {
@@ -152,7 +152,7 @@ class TestNote(unittest.TestCase):
         }
 
         self.assertEqual(result, expected)
-        self.repo.get_notes.assert_called_once()
+        self.repo.get_notes.assert_called_once_with(5, None)
 
     def test_get_all_notes_returns_empty_list(self) -> None:
         # given
@@ -170,27 +170,79 @@ class TestNote(unittest.TestCase):
             "has_more": has_more,
         }
         self.assertEqual(result, expected)
-        self.repo.get_notes.assert_called_once()
+        self.repo.get_notes.assert_called_once_with(5, None)
 
-    def test_get_all_notes_raises_if_limit_exceeds_max(self) -> None:
-        # given / when / then
-        with self.assertRaises(MaxLimitExceededError):
-            get_all_notes(self.repo, limit=MAX_LIMIT + 1)
-
-    def test_get_all_notes_passes_last_id_to_repository(self) -> None:
+    def test_get_all_notes_with_limit(self) -> None:
         # given
-        self.repo.get_notes.return_value = ([], False)
+        created_at_1 = "2025-10-23T17:50:37+00:00"
+        created_at_2 = "2025-10-23T18:50:37+00:00"
+
+        notes = [
+            Note(
+                id=2,
+                title="Title 2",
+                content="Content 2",
+                created_at=created_at_2,
+                comment="Comment 2",
+            ),
+            Note(
+                id=1,
+                title="Title 1",
+                content="Content 1",
+                created_at=created_at_1,
+                comment=None,
+            ),
+        ]
+        has_more = True
+
+        expected = {
+            "notes": [
+                {
+                    "id": 2,
+                    "title": "Title 2",
+                    "content": "Content 2",
+                    "created_at": "2025-10-23T18:50:37+00:00",
+                    "comment": "Comment 2",
+                },
+                {
+                    "id": 1,
+                    "title": "Title 1",
+                    "content": "Content 1",
+                    "created_at": "2025-10-23T17:50:37+00:00",
+                    "comment": None,
+                },
+            ],
+            "has_more": has_more,
+        }
+        self.repo.get_notes.return_value = notes, has_more
 
         # when
-        result = get_all_notes(self.repo, limit=3, last_id=50)
+        result = get_all_notes(self.repo, limit=4)
+
+        # then
+        self.assertEqual(result, expected)
+        self.repo.get_notes.assert_called_once_with(4, None)
+
+    def test_get_all_notes_with_last_id(self) -> None:
+        # given
+        self.repo.get_notes.return_value = [], False
+
+        # when
+        result = get_all_notes(self.repo, limit=5, last_id=100)
 
         # then
         expected = {
             "notes": [],
             "has_more": False,
         }
+        self.repo.get_notes.assert_called_once_with(5, 100)
         self.assertEqual(result, expected)
-        self.repo.get_notes.assert_called_once_with(3, 50)
+
+    def test_get_all_notes_raises_if_limit_exceeds_max(self) -> None:
+        # given / when / then
+        with self.assertRaises(MaxLimitExceededError):
+            get_all_notes(self.repo, limit=MAX_LIMIT + 1)
+            self.repo.get_notes.assert_not_called()
 
 
 if __name__ == "__main__":
