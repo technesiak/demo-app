@@ -76,24 +76,34 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
 
     @app.route("/api/v1/notes", methods=["GET"])
     def get_notes() -> tuple:
-        limit = request.args.get("limit")
-        if limit is not None:
-            try:
-                limit = int(limit)
-            except ValueError:
-                return jsonify({"error": "Invalid limit"}), HTTPStatus.BAD_REQUEST
-
-        last_id = request.args.get("last_id")
-        if last_id is not None:
-            try:
-                last_id = int(last_id)
-                if last_id <= 0:
-                    raise ValueError
-            except ValueError:
-                return jsonify({"error": "Invalid last_id"}), HTTPStatus.BAD_REQUEST
-
         try:
+            limit_raw = request.args.get("limit")
+            last_id_raw = request.args.get("last_id")
+
+            if limit_raw is not None:
+                try:
+                    limit = int(limit_raw)
+                except ValueError:
+                    return (
+                        jsonify({"error": "Invalid limit parameter"}),
+                        HTTPStatus.BAD_REQUEST,
+                    )
+            else:
+                limit = None
+
+            if last_id_raw is not None:
+                try:
+                    last_id = int(last_id_raw)
+                except ValueError:
+                    return (
+                        jsonify({"error": "Invalid last_id parameter"}),
+                        HTTPStatus.BAD_REQUEST,
+                    )
+            else:
+                last_id = None
+
             notes_data = get_all_notes(repository, limit, last_id)
+
             return jsonify(notes_data), HTTPStatus.OK
         except Exception as error:
             if isinstance(error, MaxLimitExceededError):
