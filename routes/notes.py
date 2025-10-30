@@ -1,3 +1,4 @@
+import logging
 import os
 from http import HTTPStatus
 
@@ -16,8 +17,6 @@ from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
 )
 
-# todo: add proper logs for errors
-
 
 def _validate_env_variable(env: str) -> str:
     if env not in os.environ:
@@ -25,7 +24,9 @@ def _validate_env_variable(env: str) -> str:
     return os.environ[env]
 
 
-def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
+def register_notes_routes(
+    app: Flask, repository: MySQLRepository, logger: logging.Logger
+) -> None:
     # Enable CORS in dev environment for Swagger UI only
     # THIS IS ONLY FOR DEMO APP PURPOSE
     environment = _validate_env_variable("SERVICE_ENVIRONMENT")
@@ -43,6 +44,8 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
         except Exception as error:
             if isinstance(error, NotFoundError):
                 return jsonify({"error": str(error)}), HTTPStatus.NOT_FOUND
+
+            logger.error(error, exc_info=True)
             return (
                 jsonify({"error": "Internal error"}),
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -69,6 +72,8 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
         except Exception as error:
             if isinstance(error, ValidationError):
                 return jsonify({"error": str(error)}), HTTPStatus.BAD_REQUEST
+
+            logger.error(error, exc_info=True)
             return (
                 jsonify({"error": "Internal error"}),
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -107,7 +112,11 @@ def register_notes_routes(app: Flask, repository: MySQLRepository) -> None:
             return jsonify(notes_data), HTTPStatus.OK
         except Exception as error:
             if isinstance(error, MaxLimitExceededError):
+
+                logger.warning(error, exc_info=True)
                 return jsonify({"error": str(error)}), HTTPStatus.CONFLICT
+
+            logger.error(error, exc_info=True)
             return (
                 jsonify({"error": "Internal error"}),
                 HTTPStatus.INTERNAL_SERVER_ERROR,

@@ -61,4 +61,4 @@ logger = logging.getLogger(__name__)
 mysql_repository = MySQLRepository(db, logger)
 
 register_health_check_routes(app, mysql_repository)
-register_notes_routes(app, mysql_repository)
+register_notes_routes(app, mysql_repository, logger)
