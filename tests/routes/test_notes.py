@@ -6,7 +6,7 @@ from unittest import TestCase
 
 import requests
 from flask import Flask
-from sqlalchemy import URL, text, Nullable
+from sqlalchemy import URL, text
 
 from infrastructure.mysql.mysql_repository import MySQLRepository
 from main import validate_env_variable

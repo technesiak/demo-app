@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from applications.notes import (
+from services.notes import (
     get_note,
     NotFoundError,
     add_note,
