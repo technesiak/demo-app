@@ -43,7 +43,7 @@ class TestNotesRoutes(TestCase):
 
         mysql_repository = MySQLRepository(db, cls.logger)
 
-        register_notes_routes(cls.app, mysql_repository)
+        register_notes_routes(cls.app, mysql_repository, logger=cls.logger)
 
         with cls.app.app_context():
             db.create_all()
