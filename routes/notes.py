@@ -4,7 +4,7 @@ from http import HTTPStatus
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from applications.notes import (
+from services.notes import (
     get_note,
     NotFoundError,
     add_note,

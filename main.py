@@ -7,7 +7,7 @@ from flask_migrate import Migrate, upgrade  # type: ignore
 
 from infrastructure.mysql.mysql_repository import MySQLRepository
 from models import db
-from sqlalchemy import NullPool, URL
+from sqlalchemy import URL
 
 from routes.health_check import register_health_check_routes
 from routes.notes import register_notes_routes
