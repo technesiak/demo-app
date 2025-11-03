@@ -6,8 +6,6 @@ from sqlalchemy.sql import text
 
 from models import Note
 
-# todo: proper solution for created_at
-
 
 class MySQLRepository:
     def __init__(self, db: SQLAlchemy, logger: logging.Logger):
@@ -30,12 +28,19 @@ class MySQLRepository:
             )
             .first()
         )
-        if result:
-            result.created_at = result.created_at.astimezone(timezone.utc)
+        if result and result.created_at:
+            if result.created_at.tzinfo is None:
+                result.created_at = result.created_at.replace(tzinfo=timezone.utc)
+            else:
+                result.created_at = result.created_at.astimezone(timezone.utc)
 
         return result
 
     def add(self, note: Note) -> int:
+        if note.created_at is not None and note.created_at.tzinfo is not None:
+            note.created_at = note.created_at.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
         self.db.session.add(note)
         self.db.session.commit()
         if note.id is None:
@@ -53,5 +58,12 @@ class MySQLRepository:
         results: list[Note] = query.limit(limit + 1).all()
         has_more = len(results) > limit
         notes = results[:limit]
+
+        for note in notes:
+            if note.created_at:
+                if note.created_at.tzinfo is None:
+                    note.created_at = note.created_at.replace(tzinfo=timezone.utc)
+                else:
+                    note.created_at = note.created_at.astimezone(timezone.utc)
 
         return notes, has_more

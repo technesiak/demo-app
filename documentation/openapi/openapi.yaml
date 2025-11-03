@@ -147,6 +147,7 @@ components:
         - id
         - title
         - content
+        - created_at
       properties:
         id:
           type: integer
@@ -167,6 +168,11 @@ components:
           description: Optional comment for the note
           minLength: 3
           maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp in RFC3339 format
+          example: "2025-11-03T13:30:00Z"
 
     Error:
       type: object

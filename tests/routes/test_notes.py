@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import unittest
@@ -92,6 +93,12 @@ class TestNotesRoutes(TestCase):
         self.assertEqual(data["title"], "Test Note")
         self.assertEqual(data["content"], "Test Content")
         self.assertIsInstance(data["created_at"], str)
+        try:
+            datetime.datetime.strptime(data["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            self.fail(
+                f"created_at '{data['created_at']}' is not a valid RFC3339 string"
+            )
         self.assertIsNone(data["comment"])
 
     def test_get_note_success_with_comment(self) -> None:
@@ -125,6 +132,12 @@ class TestNotesRoutes(TestCase):
         self.assertEqual(data["title"], "Test Note")
         self.assertEqual(data["content"], "Test Content")
         self.assertIsInstance(data["created_at"], str)
+        try:
+            datetime.datetime.strptime(data["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            self.fail(
+                f"created_at '{data['created_at']}' is not a valid RFC3339 string"
+            )
         self.assertEqual(data["comment"], "Test Comment")
 
     def test_add_note_success_without_comment(self) -> None:
@@ -214,8 +227,12 @@ class TestNotesRoutes(TestCase):
             db.session.add_all([note1, note2])
             db.session.commit()
 
-            created_at_1 = note1.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT")
-            created_at_2 = note2.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT")
+            created_at_1 = note1.created_at.astimezone(datetime.timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+            created_at_2 = note2.created_at.astimezone(datetime.timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
 
         expected_result: dict = {
             "has_more": False,
@@ -271,7 +288,9 @@ class TestNotesRoutes(TestCase):
                     "title": note.title,
                     "content": note.content,
                     "comment": note.comment,
-                    "created_at": note.created_at.strftime("%a, %d %b %Y %H:%M:%S GMT"),
+                    "created_at": note.created_at.astimezone(
+                        datetime.timezone.utc
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 }
                 for note in notes
             ]

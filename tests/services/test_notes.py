@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 
 from services.notes import (
@@ -23,19 +24,32 @@ class TestNote(unittest.TestCase):
 
     def test_get_note_success(self) -> None:
         # given
+        expected_note_id = 123
         expected_title = "Test Title"
         expected_content = "Test Content"
-        note = Note(title=expected_title, content=expected_content)
+        created_at = datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc)
+        created_at_rfc3339 = created_at.strftime("%Y-%m-%dT%H:%M:%SZ")
+        note = Note(
+            id=expected_note_id,
+            title=expected_title,
+            content=expected_content,
+            created_at=created_at,
+        )
         self.repo.get_by_id.return_value = note
+        expected = {
+            "id": expected_note_id,
+            "title": expected_title,
+            "content": expected_content,
+            "created_at": created_at_rfc3339,
+            "comment": None,
+        }
 
         # when
         result = get_note(self.repo, 1)
 
         # then
         self.repo.get_by_id.assert_called_once_with(1)
-        self.assertEqual(result["title"], expected_title)
-        self.assertEqual(result["content"], expected_content)
-        self.assertIsNone(result["comment"])
+        self.assertEqual(result, expected)
 
     def test_get_note_not_found_raises(self) -> None:
         # given
@@ -105,8 +119,10 @@ class TestNote(unittest.TestCase):
 
     def test_get_all_notes_returns_list_of_dicts(self) -> None:
         # given
-        created_at_1 = "2025-10-23T17:50:37+00:00"
-        created_at_2 = "2025-10-23T18:50:37+00:00"
+        created_at_1 = datetime(2025, 10, 3, 12, 0, 0, tzinfo=timezone.utc)
+        created_at_1_rfc3339 = created_at_1.strftime("%Y-%m-%dT%H:%M:%SZ")
+        created_at_2 = datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc)
+        created_at_2_rfc3339 = created_at_2.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         notes = [
             Note(
@@ -137,14 +153,14 @@ class TestNote(unittest.TestCase):
                     "id": 2,
                     "title": "Title 2",
                     "content": "Content 2",
-                    "created_at": "2025-10-23T18:50:37+00:00",
+                    "created_at": created_at_2_rfc3339,
                     "comment": "Comment 2",
                 },
                 {
                     "id": 1,
                     "title": "Title 1",
                     "content": "Content 1",
-                    "created_at": "2025-10-23T17:50:37+00:00",
+                    "created_at": created_at_1_rfc3339,
                     "comment": None,
                 },
             ],
@@ -174,8 +190,10 @@ class TestNote(unittest.TestCase):
 
     def test_get_all_notes_with_limit(self) -> None:
         # given
-        created_at_1 = "2025-10-23T17:50:37+00:00"
-        created_at_2 = "2025-10-23T18:50:37+00:00"
+        created_at_1 = datetime(2025, 10, 3, 12, 0, 0, tzinfo=timezone.utc)
+        created_at_1_rfc3339 = created_at_1.strftime("%Y-%m-%dT%H:%M:%SZ")
+        created_at_2 = datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc)
+        created_at_2_rfc3339 = created_at_2.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         notes = [
             Note(
@@ -201,14 +219,14 @@ class TestNote(unittest.TestCase):
                     "id": 2,
                     "title": "Title 2",
                     "content": "Content 2",
-                    "created_at": "2025-10-23T18:50:37+00:00",
+                    "created_at": created_at_2_rfc3339,
                     "comment": "Comment 2",
                 },
                 {
                     "id": 1,
                     "title": "Title 1",
                     "content": "Content 1",
-                    "created_at": "2025-10-23T17:50:37+00:00",
+                    "created_at": created_at_1_rfc3339,
                     "comment": None,
                 },
             ],

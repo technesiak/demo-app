@@ -90,6 +90,6 @@ def _to_dict(note: Note) -> dict:
         "id": note.id,
         "title": note.title,
         "content": note.content,
-        "created_at": note.created_at,
+        "created_at": note.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "comment": note.comment,
     }

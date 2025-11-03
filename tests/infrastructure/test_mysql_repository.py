@@ -1,4 +1,5 @@
 import logging
+from datetime import timezone, datetime, timedelta
 from unittest import TestCase
 
 from flask import Flask
@@ -76,6 +77,8 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(fetched.content, "Some content2")
             self.assertEqual(fetched.title, "Test2")
             self.assertIsNone(fetched.comment)
+            self.assertIsNotNone(fetched.created_at)
+            self.assertEqual(fetched.created_at.tzinfo, timezone.utc)
             # and when
             fetched_note_3 = self.repo.get_by_id(added_note3_id)
             # and then
@@ -84,6 +87,8 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(fetched_note_3.content, "Some content3")
             self.assertEqual(fetched_note_3.title, "Test3")
             self.assertEqual(fetched_note_3.comment, "Comment")
+            self.assertIsNotNone(fetched_note_3.created_at)
+            self.assertEqual(fetched_note_3.created_at.tzinfo, timezone.utc)
 
     def test_get_by_id_not_found(self) -> None:
         # given
@@ -108,6 +113,8 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(fetched.content, "Some content")
             self.assertEqual(fetched.title, "Test")
             self.assertIsNone(fetched.comment)
+            self.assertIsNotNone(fetched.created_at)
+            self.assertEqual(fetched.created_at.tzinfo, timezone.utc)
 
     def test_add_success_with_comment(self) -> None:
         # given
@@ -123,6 +130,38 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(fetched.content, "Some content")
             self.assertEqual(fetched.title, "Test")
             self.assertEqual(fetched.comment, "Comment")
+            self.assertIsNotNone(fetched.created_at)
+            self.assertEqual(fetched.created_at.tzinfo, timezone.utc)
+
+    def test_add_success_with_timezone_in_created_at(self) -> None:
+        # given:
+        tz_plus_2 = timezone(timedelta(hours=2))
+        created_at_with_tz = datetime(2025, 11, 3, 15, 30, tzinfo=tz_plus_2)
+
+        note = Note(
+            title="Test Note",
+            content="Content with timezone",
+            created_at=created_at_with_tz,
+        )
+
+        # when
+        with self.app.app_context():
+            note_id = self.repo.add(note)
+
+            # then
+            self.assertIsInstance(note_id, int)
+            self.assertIsNotNone(note.id)
+
+            saved_note = db.session.get(Note, note_id)
+            if saved_note is None:
+                self.fail("Saved note not found in DB")
+            self.assertEqual(saved_note.title, "Test Note")
+            self.assertEqual(saved_note.content, "Content with timezone")
+
+            expected_utc = created_at_with_tz.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
+            self.assertEqual(saved_note.created_at, expected_utc)
 
     def test_add_note_without_title(self) -> None:
         note = Note(content="Some content")
@@ -148,10 +187,14 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(notes[0].title, "Second")
             self.assertEqual(notes[0].content, "second content")
             self.assertEqual(notes[0].comment, "comment")
+            self.assertIsNotNone(notes[0].created_at)
+            self.assertEqual(notes[0].created_at.tzinfo, timezone.utc)
             self.assertEqual(notes[1].id, 1)
             self.assertEqual(notes[1].title, "First")
             self.assertEqual(notes[1].content, "first content")
             self.assertIsNone(notes[1].comment)
+            self.assertIsNotNone(notes[1].created_at)
+            self.assertEqual(notes[1].created_at.tzinfo, timezone.utc)
 
     def test_get_notes_empty_list(self) -> None:
 
@@ -181,6 +224,8 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(notes[0].title, "Second")
             self.assertEqual(notes[0].content, "second content")
             self.assertEqual(notes[0].comment, "comment")
+            self.assertIsNotNone(notes[0].created_at)
+            self.assertEqual(notes[0].created_at.tzinfo, timezone.utc)
 
     def test_get_notes_returns_ordered_list_limit_and_last_id_were_given(self) -> None:
         # given
@@ -206,7 +251,11 @@ class TestMySQLRepository(TestCase):
             self.assertEqual(notes[0].title, "Second")
             self.assertEqual(notes[0].content, "second content")
             self.assertEqual(notes[0].comment, "comment")
+            self.assertIsNotNone(notes[0].created_at)
+            self.assertEqual(notes[0].created_at.tzinfo, timezone.utc)
             self.assertEqual(notes[1].id, 1)
             self.assertEqual(notes[1].title, "First")
             self.assertEqual(notes[1].content, "first content")
             self.assertIsNone(notes[1].comment)
+            self.assertIsNotNone(notes[1].created_at)
+            self.assertEqual(notes[1].created_at.tzinfo, timezone.utc)
