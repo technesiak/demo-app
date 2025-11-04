@@ -4,7 +4,7 @@ from datetime import timezone
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
 
-from models import Note
+from models.models import Note
 
 
 class MySQLRepository:

@@ -1,5 +1,5 @@
 from infrastructure.mysql.mysql_repository import MySQLRepository
-from models import Note
+from models.models import Note
 
 
 class ValidationError(Exception):

@@ -10,7 +10,7 @@ from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
 )
 from main import validate_env_variable
-from models import db, Note
+from models.models import db, Note
 
 
 class TestMySQLRepository(TestCase):

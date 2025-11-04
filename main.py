@@ -6,7 +6,7 @@ from flask.cli import with_appcontext
 from flask_migrate import Migrate, upgrade  # type: ignore
 
 from infrastructure.mysql.mysql_repository import MySQLRepository
-from models import db
+from models.models import db
 from sqlalchemy import URL
 
 from routes.health_check import register_health_check_routes

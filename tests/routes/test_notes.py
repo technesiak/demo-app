@@ -11,7 +11,7 @@ from sqlalchemy import URL, text
 
 from infrastructure.mysql.mysql_repository import MySQLRepository
 from main import validate_env_variable
-from models import db, Note
+from models.models import db, Note
 from routes.notes import register_notes_routes
 
 APP_URL = os.getenv("URL", "")
