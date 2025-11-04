@@ -1,11 +1,16 @@
 FROM public.ecr.aws/docker/library/python:3.12-slim
 
-ENV PYTHONUNBUFFERED=True
-ARG PORT=8080
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+ENV PORT=8080
 
 WORKDIR /app
-COPY . ./
+
+COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 0 main:app
+COPY . .
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "4", "--timeout", "0", "main:app"]
