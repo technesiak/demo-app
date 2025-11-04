@@ -18,10 +18,11 @@ from infrastructure.mysql.mysql_repository import (
 )
 
 
-def _validate_env_variable(env: str) -> str:
-    if env not in os.environ:
-        raise ValueError("{} not found in environment variables.".format(env))
-    return os.environ[env]
+def _get_env_value(name: str) -> str:
+    value = os.getenv(name)
+    if value is None:
+        raise RuntimeError(f"Missing required environment variable: {name}")
+    return value
 
 
 def register_notes_routes(
@@ -29,7 +30,7 @@ def register_notes_routes(
 ) -> None:
     # Enable CORS in dev environment for Swagger UI only
     # THIS IS ONLY FOR DEMO APP PURPOSE
-    environment = _validate_env_variable("SERVICE_ENVIRONMENT")
+    environment = _get_env_value("SERVICE_ENVIRONMENT")
     if environment == "dev":
         CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
 

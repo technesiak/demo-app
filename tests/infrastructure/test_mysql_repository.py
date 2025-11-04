@@ -9,8 +9,8 @@ from sqlalchemy.exc import IntegrityError
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
 )
-from main import validate_env_variable
-from models import db, Note
+from main import get_env_value
+from models.models import db, Note
 
 
 class TestMySQLRepository(TestCase):
@@ -22,12 +22,12 @@ class TestMySQLRepository(TestCase):
     def setUpClass(cls) -> None:
         cls.app = Flask(__name__)
         cls.app.config["TESTING"] = True
-        db_host = validate_env_variable("DB_HOST")
-        db_port = int(validate_env_variable("DB_PORT"))
-        db_name = validate_env_variable("DB_DATABASE")
-        db_user = validate_env_variable("DB_USERNAME")
-        db_password = validate_env_variable("DB_PASSWORD")
-        db_dsn = URL.create(
+        db_host = get_env_value("DB_HOST")
+        db_port = int(get_env_value("DB_PORT"))
+        db_name = get_env_value("DB_DATABASE")
+        db_user = get_env_value("DB_USERNAME")
+        db_password = get_env_value("DB_PASSWORD")
+        db_url = URL.create(
             drivername="mysql+pymysql",
             username=db_user,
             password=db_password,
@@ -35,7 +35,7 @@ class TestMySQLRepository(TestCase):
             port=db_port,
             database=db_name,
         )
-        cls.app.config["SQLALCHEMY_DATABASE_URI"] = db_dsn
+        cls.app.config["SQLALCHEMY_DATABASE_URI"] = db_url
         db.init_app(cls.app)
         cls.logger = logging.getLogger(__name__)
 

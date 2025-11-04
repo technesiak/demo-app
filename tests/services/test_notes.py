@@ -15,7 +15,7 @@ from services.notes import (
     MAX_LIMIT,
     MaxLimitExceededError,
 )
-from models import Note
+from models.models import Note
 
 
 class TestNote(unittest.TestCase):

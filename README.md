@@ -53,13 +53,13 @@ docker compose up --detach
 ### Run Black formatter
 
 ```bash
-docker compose exec -T application sh -c "python -m black ."
+docker compose exec -T demo-app black .
 ```
 
 ### Run Mypy static type checks
 
 ```bash
-docker compose exec -T application sh -c "mypy --config-file mypy.ini ."
+docker compose exec -T demo-app mypy --config-file mypy.ini .
 ```
 
 ---
@@ -69,19 +69,19 @@ docker compose exec -T application sh -c "mypy --config-file mypy.ini ."
 Initialize SQLAlchemy migrations (first-time setup):
 
 ```bash
-docker compose run --rm -e FLASK_APP=main application flask db init
+docker compose run --rm -e FLASK_APP=main demo-app flask db init
 ```
 
 Generate a new migration after changing models:
 
 ```bash
-docker compose exec -e FLASK_APP=main application flask db migrate
+docker compose exec -e FLASK_APP=main demo-app flask db migrate
 ```
 
 Apply migrations:
 
 ```bash
-docker compose exec -e FLASK_APP=main application flask db upgrade
+docker compose exec -e FLASK_APP=main demo-app flask db upgrade
 ```
 
 ---
@@ -92,8 +92,8 @@ To execute all test suites (unit, integration, e2e):
 
 ```bash
 docker compose up --detach
-docker compose exec -e FLASK_APP=main application flask db upgrade
-docker compose exec -T application python -m unittest
+docker compose exec -e FLASK_APP=main demo-app flask db upgrade
+docker compose exec -T demo-app python -m unittest
 ```
 
 Tests run against the containerized environment to ensure consistent results.

@@ -1,5 +1,5 @@
 services:
-  application:
+  demo-app:
     build:
       context: .
       args:
