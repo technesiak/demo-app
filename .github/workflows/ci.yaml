@@ -21,7 +21,7 @@ jobs:
       - name: Run tests
         run: |-
           docker compose up --detach
-          docker compose exec -e FLASK_APP=main application flask db upgrade
-          docker compose exec -T application sh -c "mypy --config-file mypy.ini ."
-          docker compose exec -T application sh -c "python -m black --check ."
-          docker compose exec application python -m unittest
+          docker compose exec -e FLASK_APP=main demo-app flask db upgrade
+          docker compose exec -T demo-app mypy --config-file mypy.ini .
+          docker compose exec -T demo-app black --check .
+          docker compose exec demo-app python -m unittest
