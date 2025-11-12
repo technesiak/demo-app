@@ -4,6 +4,9 @@ from http import HTTPStatus
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman  # type: ignore
 
 from services.notes import (
     get_note,
@@ -16,6 +19,8 @@ from services.notes import (
 from infrastructure.mysql.mysql_repository import (
     MySQLRepository,
 )
+
+KEY_PREFIX = "flask-limiter"
 
 
 def _get_env_value(name: str) -> str:
@@ -34,7 +39,20 @@ def register_notes_routes(
     if environment == "dev":
         CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
 
+    redis_url = _get_env_value("REDIS_URL")
+
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["100 per hour"],
+        storage_uri=redis_url,
+        key_prefix=KEY_PREFIX,
+        app=app,
+    )
+
+    Talisman(app, force_https=False)
+
     @app.route("/api/v1/notes/<int:note_id>", methods=["GET"])
+    @limiter.limit("50 per minute")
     def get_note_route(note_id: int) -> tuple:
         try:
             note = get_note(repository, note_id)
@@ -53,6 +71,7 @@ def register_notes_routes(
             )
 
     @app.route("/api/v1/notes", methods=["POST"])
+    @limiter.limit("20 per minute")
     def add_note_route() -> tuple:
         data = request.get_json()
         if not isinstance(data, dict):
@@ -81,6 +100,7 @@ def register_notes_routes(
             )
 
     @app.route("/api/v1/notes", methods=["GET"])
+    @limiter.limit("50 per minute")
     def get_notes() -> tuple:
         try:
             limit_raw = request.args.get("limit")

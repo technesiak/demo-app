@@ -5,6 +5,7 @@ import unittest
 from http import HTTPStatus
 from unittest import TestCase
 
+import redis
 import requests
 from flask import Flask
 from sqlalchemy import URL, text
@@ -14,7 +15,17 @@ from main import get_env_value
 from models.models import db, Note
 from routes.notes import register_notes_routes
 
-APP_URL = os.getenv("URL", "")
+APP_URL = get_env_value("URL")
+
+
+def get_redis_client() -> redis.Redis:
+    redis_url = get_env_value("REDIS_URL")
+    return redis.Redis.from_url(redis_url)
+
+
+def flush_redis() -> None:
+    client = get_redis_client()
+    client.flushdb()
 
 
 class TestNotesRoutes(TestCase):
@@ -52,11 +63,14 @@ class TestNotesRoutes(TestCase):
     def setUp(self) -> None:
         self.app_context = self.app.app_context()
         self.app_context.push()
+        with self.app.app_context():
+            flush_redis()
 
     def tearDown(self) -> None:
         with self.app.app_context():
             db.session.execute(text("TRUNCATE TABLE notes"))
             db.session.commit()
+            flush_redis()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -348,6 +362,39 @@ class TestNotesRoutes(TestCase):
         data = res.json()
         self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(data["error"], "Invalid last_id parameter")
+
+    def test_rate_limit_exceeded(self) -> None:
+        # given
+        with self.app.app_context():
+            # when
+            for i in range(21):
+                res = requests.post(
+                    APP_URL + "/api/v1/notes",
+                    json={"title": f"Title {i}", "content": "Some content"},
+                )
+                # then
+                if i < 20:
+                    self.assertEqual(
+                        res.status_code, 200, f"Request {i} returned {res.status_code}"
+                    )
+                else:
+                    self.assertEqual(
+                        res.status_code, 429, f"Request {i} should trigger rate limit"
+                    )
+
+    def test_security_headers_present(self) -> None:
+        # given
+        with self.app.app_context():
+            # when
+            res = requests.get(url=APP_URL + f"/api/v1/notes?limit=abc")
+        # then
+        assert "Content-Security-Policy" in res.headers
+        assert "X-Frame-Options" in res.headers
+        assert "X-Content-Type-Options" in res.headers
+        assert "Referrer-Policy" in res.headers
+
+        self.assertEqual(res.headers["X-Frame-Options"], "SAMEORIGIN")
+        self.assertEqual(res.headers["X-Content-Type-Options"], "nosniff")
 
 
 if __name__ == "__main__":

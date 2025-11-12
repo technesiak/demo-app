@@ -13,6 +13,7 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_DATABASE=first_db
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./:/app
     ports:
@@ -21,6 +22,8 @@ services:
       db:
         condition: service_healthy
       swagger-ui:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - test-network
@@ -57,6 +60,19 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - test-network
+  redis:
+    image: public.ecr.aws/docker/library/redis:8.4-rc1-alpine3.22
+    container_name: redis_limiter
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     networks:
       - test-network
 
