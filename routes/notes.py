@@ -31,15 +31,13 @@ def _get_env_value(name: str) -> str:
 
 
 def register_notes_routes(
-    app: Flask, repository: MySQLRepository, logger: logging.Logger
+    app: Flask, repository: MySQLRepository, redis_url: str, logger: logging.Logger
 ) -> None:
     # Enable CORS in dev environment for Swagger UI only
     # THIS IS ONLY FOR DEMO APP PURPOSE
     environment = _get_env_value("SERVICE_ENVIRONMENT")
     if environment == "dev":
         CORS(app, resources={r"/api/*": {"origins": "http://localhost:8081"}})
-
-    redis_url = _get_env_value("REDIS_URL")
 
     limiter = Limiter(
         key_func=get_remote_address,
