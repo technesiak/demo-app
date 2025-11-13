@@ -15,9 +15,10 @@ paths:
         - name: note_id
           in: path
           required: true
-          description: The ID of the note
+          description: The ID of the note (must be a positive integer)
           schema:
             type: integer
+            minimum: 1
       responses:
         '200':
           description: Note retrieved successfully
@@ -25,8 +26,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Note'
+        '400':
+          description: Invalid note_id (must be a positive integer)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Note not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests (rate limit exceeded)
           content:
             application/json:
               schema:
@@ -57,6 +70,7 @@ paths:
           required: false
           schema:
             type: integer
+            minimum: 1
       responses:
         '200':
           description: List of notes with pagination
@@ -72,13 +86,19 @@ paths:
                   has_more:
                     type: boolean
         '400':
-          description: Bad request (validation error)
+          description: Bad request (invalid query parameters)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
           description: Max limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests (rate limit exceeded)
           content:
             application/json:
               schema:
@@ -105,17 +125,17 @@ paths:
               properties:
                 title:
                   type: string
-                  minLength: 3    # MIN_TITLE_LEN
-                  maxLength: 255  # MAX_TITLE_LEN
+                  minLength: 3
+                  maxLength: 255
                 content:
                   type: string
-                  minLength: 5    # MIN_CONTENT_LEN
-                  maxLength: 2000 # MAX_CONTENT_LEN
+                  minLength: 5
+                  maxLength: 2000
                 comment:
                   type: string
                   nullable: true
-                  minLength: 3    # MIN_COMMENT_LEN
-                  maxLength: 100  # MAX_COMMENT_LEN
+                  minLength: 3
+                  maxLength: 100
       responses:
         '200':
           description: Note created successfully
@@ -127,7 +147,19 @@ paths:
                   id:
                     type: integer
         '400':
-          description: Bad request (validation error)
+          description: Bad request (validation error or missing fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '415':
+          description: Unsupported Media Type (Content-Type must be application/json)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests (rate limit exceeded)
           content:
             application/json:
               schema:
@@ -179,3 +211,4 @@ components:
       properties:
         error:
           type: string
+          description: Error message

@@ -168,6 +168,15 @@ class TestNotesRoutes(TestCase):
             )
         self.assertEqual(data["comment"], "Test Comment")
 
+    def test_get_note_with_negative_id(self) -> None:
+        # when
+        res = requests.get(APP_URL + "/api/v1/notes/-1")
+
+        # then
+        # Flask does not match negative numbers for <int:note_id>, so the route is never reached
+        # and Flask returns 404 before the validation logic runs.
+        self.assertEqual(res.status_code, HTTPStatus.NOT_FOUND)
+
     def test_add_note_success_without_comment(self) -> None:
         # given
         payload = {"title": "test title", "content": "This is a test note."}
@@ -231,6 +240,35 @@ class TestNotesRoutes(TestCase):
         self.assertEqual(res.status_code, 400)
         data = res.json()
         self.assertEqual(data, {"error": "Invalid request body"})
+
+    def test_add_note_without_json_content_type(self) -> None:
+        # given
+        payload = '{"title": "no json header", "content": "test"}'
+
+        # when
+        res = requests.post(
+            APP_URL + "/api/v1/notes",
+            data=payload,
+            headers={"Content-Type": "text/plain"},
+        )
+
+        # then
+        self.assertEqual(res.status_code, HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+        self.assertEqual(res.json(), {"error": "Content-Type must be application/json"})
+
+    def test_add_note_with_empty_or_whitespace_title(self) -> None:
+        # given
+        payload_empty = {"title": "", "content": "data"}
+        payload_space = {"title": "   ", "content": "data"}
+
+        # when
+        res_empty = requests.post(APP_URL + "/api/v1/notes", json=payload_empty)
+        res_space = requests.post(APP_URL + "/api/v1/notes", json=payload_space)
+
+        # then
+        for res in [res_empty, res_space]:
+            self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
+            self.assertEqual(res.json(), {"error": "title cannot be empty"})
 
     def test_get_notes_returned_empty_list(self) -> None:
         # given
@@ -377,6 +415,26 @@ class TestNotesRoutes(TestCase):
         self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(data["error"], "Invalid last_id parameter")
 
+    def test_get_notes_with_zero_or_negative_limit(self) -> None:
+        # when
+        res_zero = requests.get(APP_URL + "/api/v1/notes?limit=0")
+        # then
+        self.assertEqual(res_zero.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(res_zero.json(), {"error": "limit must be a positive integer"})
+
+        # and when
+        res_neg = requests.get(APP_URL + "/api/v1/notes?limit=-5")
+        # then
+        self.assertEqual(res_neg.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(res_neg.json(), {"error": "limit must be a positive integer"})
+
+    def test_get_notes_with_negative_last_id(self) -> None:
+        # when
+        res = requests.get(APP_URL + "/api/v1/notes?last_id=-10")
+        # then
+        self.assertEqual(res.status_code, HTTPStatus.BAD_REQUEST)
+        self.assertEqual(res.json(), {"error": "last_id must be a positive integer"})
+
     def test_rate_limit_exceeded(self) -> None:
         # given
         with self.app.app_context():
@@ -409,6 +467,32 @@ class TestNotesRoutes(TestCase):
 
         self.assertEqual(res.headers["X-Frame-Options"], "SAMEORIGIN")
         self.assertEqual(res.headers["X-Content-Type-Options"], "nosniff")
+
+    def test_sql_injection_in_get_note(self) -> None:
+        # Invalid route because of string part -> should return 404, not 500
+        res1 = requests.get(APP_URL + "/api/v1/notes/1 OR 1=1")
+        self.assertEqual(res1.status_code, HTTPStatus.NOT_FOUND)
+
+        res2 = requests.get(APP_URL + "/api/v1/notes/1; DELETE FROM notes;")
+        self.assertEqual(res2.status_code, HTTPStatus.NOT_FOUND)
+
+    def test_sql_injection_in_post_payload(self) -> None:
+        # given
+        payload = {"title": "abc'); DROP TABLE notes; --", "content": "Hello"}
+
+        # when
+        res = requests.post(APP_URL + "/api/v1/notes", json=payload)
+
+        # then
+        # should succeed as normal note (since ORM parameterizes safely)
+        self.assertEqual(res.status_code, HTTPStatus.OK)
+        data = res.json()
+        self.assertIn("id", data)
+
+        # ensure table still exists
+        with self.app.app_context():
+            count = db.session.query(Note).count()
+            self.assertGreaterEqual(count, 1, "Table 'notes' may have been dropped!")
 
 
 if __name__ == "__main__":
