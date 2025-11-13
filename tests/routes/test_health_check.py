@@ -12,14 +12,18 @@ class TestHealthCheckControllers(TestCase):
         self.app = Flask(__name__)
 
         self.mysql_repository = MagicMock()
+        self.redis_repository = MagicMock()
 
-        register_health_check_routes(self.app, self.mysql_repository)
+        register_health_check_routes(
+            self.app, self.mysql_repository, self.redis_repository
+        )
 
         self.client = self.app.test_client()
 
     def test_health_check_service_is_ok(self) -> None:
         # given
         self.mysql_repository.health_check.return_value = True
+        self.redis_repository.health_check.return_value = True
 
         # when
         response = self.client.get("/health")
@@ -27,11 +31,12 @@ class TestHealthCheckControllers(TestCase):
         # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
         data = response.get_json()
-        self.assertEqual(data, {"database": "ok"})
+        self.assertEqual(data, {"database": "ok", "redis": "ok"})
 
     def test_health_check_mysql_error(self) -> None:
         # given
         self.mysql_repository.health_check.return_value = False
+        self.redis_repository.health_check.return_value = True
 
         # when
         response = self.client.get("/health")
@@ -39,4 +44,17 @@ class TestHealthCheckControllers(TestCase):
         # then
         self.assertEqual(response.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
         data = response.get_json()
-        self.assertEqual(data, {"database": "error"})
+        self.assertEqual(data, {"database": "error", "redis": "ok"})
+
+    def test_health_check_redis_error(self) -> None:
+        # given
+        self.mysql_repository.health_check.return_value = True
+        self.redis_repository.health_check.return_value = False
+
+        # when
+        response = self.client.get("/health")
+
+        # then
+        self.assertEqual(response.status_code, HTTPStatus.INTERNAL_SERVER_ERROR)
+        data = response.get_json()
+        self.assertEqual(data, {"database": "ok", "redis": "error"})

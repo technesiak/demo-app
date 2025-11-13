@@ -4,8 +4,10 @@ import os
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_migrate import Migrate, upgrade  # type: ignore
+from redis import Redis
 from sqlalchemy import URL
 
+from infrastructure.redis.redis_repository import RedisRepository
 from models.models import db
 from infrastructure.mysql.mysql_repository import MySQLRepository
 from routes.health_check import register_health_check_routes
@@ -43,9 +45,32 @@ logger = logging.getLogger("demo_app_logger")
 logger.setLevel(logging.INFO)
 
 
-repository = MySQLRepository(db, logger)
-register_health_check_routes(app, repository)
-register_notes_routes(app, repository, logger)
+mysql_repository = MySQLRepository(db, logger)
+
+redis_host = get_env_value("REDIS_HOST")
+redis_port = int(get_env_value("REDIS_PORT"))
+redis_password = get_env_value("REDIS_PASSWORD")
+redis_db = int(get_env_value("REDIS_DB"))
+
+try:
+    redis_client = Redis(
+        host=redis_host,
+        port=redis_port,
+        password=redis_password,
+        db=redis_db,
+        decode_responses=True,
+    )
+
+    redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
+except Exception as err:
+    print(f"[Startup Error] {err}")
+    exit(1)
+
+
+redis_repository = RedisRepository(redis_client, logger)
+
+register_health_check_routes(app, mysql_repository, redis_repository)
+register_notes_routes(app, mysql_repository, redis_url, logger)
 
 
 @app.route("/")

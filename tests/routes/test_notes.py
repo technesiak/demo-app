@@ -1,6 +1,5 @@
 import datetime
 import logging
-import os
 import unittest
 from http import HTTPStatus
 from unittest import TestCase
@@ -18,13 +17,28 @@ from routes.notes import register_notes_routes
 APP_URL = get_env_value("URL")
 
 
-def get_redis_client() -> redis.Redis:
-    redis_url = get_env_value("REDIS_URL")
-    return redis.Redis.from_url(redis_url)
+def get_redis_client_and_url() -> tuple[redis.Redis, str]:
+    redis_host = get_env_value("REDIS_HOST")
+    redis_port = int(get_env_value("REDIS_PORT"))
+    redis_password = get_env_value("REDIS_PASSWORD")
+    redis_db = int(get_env_value("REDIS_DB"))
+
+    redis_client = redis.Redis(
+        host=redis_host,
+        port=redis_port,
+        password=redis_password,
+        db=redis_db,
+        decode_responses=True,
+    )
+
+    redis_url = f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
+
+    return redis_client, redis_url
 
 
 def flush_redis() -> None:
-    client = get_redis_client()
+    client, _ = get_redis_client_and_url()
+    client.ping()
     client.flushdb()
 
 
@@ -54,8 +68,8 @@ class TestNotesRoutes(TestCase):
         db.init_app(cls.app)
 
         mysql_repository = MySQLRepository(db, cls.logger)
-
-        register_notes_routes(cls.app, mysql_repository, logger=cls.logger)
+        _, redis_url = get_redis_client_and_url()
+        register_notes_routes(cls.app, mysql_repository, redis_url, logger=cls.logger)
 
         with cls.app.app_context():
             db.create_all()
