@@ -53,6 +53,12 @@ def register_notes_routes(
     @limiter.limit("50 per minute")
     def get_note_route(note_id: int) -> tuple:
         try:
+            if note_id <= 0:
+                return (
+                    jsonify({"error": "note_id must be a positive integer"}),
+                    HTTPStatus.BAD_REQUEST,
+                )
+
             note = get_note(repository, note_id)
             return (
                 jsonify(note),
@@ -71,6 +77,12 @@ def register_notes_routes(
     @app.route("/api/v1/notes", methods=["POST"])
     @limiter.limit("20 per minute")
     def add_note_route() -> tuple:
+        if not request.is_json:
+            return (
+                jsonify({"error": "Content-Type must be application/json"}),
+                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+            )
+
         data = request.get_json()
         if not isinstance(data, dict):
             return jsonify({"error": "Invalid request body"}), HTTPStatus.BAD_REQUEST
@@ -83,6 +95,10 @@ def register_notes_routes(
             return jsonify({"error": "Missing title"}), HTTPStatus.BAD_REQUEST
         if content is None:
             return jsonify({"error": "Missing content"}), HTTPStatus.BAD_REQUEST
+        if not isinstance(title, str) or not title.strip():
+            return jsonify({"error": "title cannot be empty"}), HTTPStatus.BAD_REQUEST
+        if not isinstance(content, str) or not content.strip():
+            return jsonify({"error": "content cannot be empty"}), HTTPStatus.BAD_REQUEST
 
         try:
             note_id = add_note(repository, title, content, comment)
@@ -112,6 +128,11 @@ def register_notes_routes(
                         jsonify({"error": "Invalid limit parameter"}),
                         HTTPStatus.BAD_REQUEST,
                     )
+                if limit <= 0:
+                    return (
+                        jsonify({"error": "limit must be a positive integer"}),
+                        HTTPStatus.BAD_REQUEST,
+                    )
             else:
                 limit = None
 
@@ -121,6 +142,11 @@ def register_notes_routes(
                 except ValueError:
                     return (
                         jsonify({"error": "Invalid last_id parameter"}),
+                        HTTPStatus.BAD_REQUEST,
+                    )
+                if last_id <= 0:
+                    return (
+                        jsonify({"error": "last_id must be a positive integer"}),
                         HTTPStatus.BAD_REQUEST,
                     )
             else:
