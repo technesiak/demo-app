@@ -100,6 +100,35 @@ Tests run against the containerized environment to ensure consistent results.
 
 ---
 
+## Dependencies
+
+Demo project incorporates locked via pip-compile dependencies for reproducible environment.
+The requirements.txt file is generated automatically and should not be changed manually.
+In order to add or change library or its version, see the instructions included below.
+
+pip-tools needs to be installed in a local environment in order to use pip-compile:
+
+```bash
+python -m pip install pip-tools
+```
+
+In order to add a new library, it needs to be included in the requirement.in file with a proper version.
+Then, regenerate a locked list of dependencies:
+
+```bash
+pip-compile --strip-extras requirements.in
+```
+And then, changes will be seen in the requirements.txt file. The docker container needs to be rebuilt.
+
+In order to update existing library, its version in the requirements.in file should be changed.
+Then, upgrade dependencies:
+```bash
+pip-compile --upgrade --strip-extras requirements.in
+```
+And then, changes will be seen in the requirements.txt file. The docker container needs to be rebuilt.
+
+---
+
 ## API Documentation
 
 * [OpenAPI:](documentation/openapi/openapi.yaml)
