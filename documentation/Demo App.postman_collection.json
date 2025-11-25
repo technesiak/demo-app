@@ -1,129 +1,206 @@
 {
-	"info": {
-		"_postman_id": "f5d49f5d-89f5-4fa9-83bd-675af81d1680",
-		"name": "Demo App",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "34593739",
-		"_collection_link": "https://technesiak-1619673.postman.co/workspace/Technesiak's-Workspace~697850ee-d2b7-4caa-8601-266fb9f115a1/collection/49442093-f5d49f5d-89f5-4fa9-83bd-675af81d1680?action=share&source=collection_link&creator=34593739"
-	},
-	"item": [
-		{
-			"name": "localhost:8080/api/v1/notes/5",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/api/v1/notes/5",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"v1",
-						"notes",
-						"5"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "localhost:8080/api/v1/notes",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"content\": \"test content 1234\",\n    \"title\": \"test title\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "localhost:8080/api/v1/notes",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"v1",
-						"notes"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "localhost:8080/health",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/health",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"health"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "localhost:8080/api/v1/notes",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/api/v1/notes",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"v1",
-						"notes"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "localhost:8080/api/v1/notes?limit=5&last_id=5",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "localhost:8080/api/v1/notes?limit=5&last_id=5",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"api",
-						"v1",
-						"notes"
-					],
-					"query": [
-						{
-							"key": "limit",
-							"value": "5"
-						},
-						{
-							"key": "last_id",
-							"value": "5"
-						}
-					]
-				}
-			},
-			"response": []
-		}
-	]
+  "info": {
+    "name": "Notes API Collection",
+    "_postman_id": "e7d1e618-9b11-4a4d-a9c7-aaa123456789",
+    "description": "Automated tests for Notes API based on OpenAPI 3.1.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Note (POST /api/v1/notes)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/notes",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "notes"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Test note title\",\n  \"content\": \"This is test content for the note.\",\n  \"comment\": \"Optional comment\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Status Code",
+              "pm.test(\"Status 200 – note created\", () => { pm.response.to.have.status(200); });",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "// Body structure",
+              "pm.test(\"Response contains id\", () => {",
+              "    pm.expect(json).to.have.property(\"id\");",
+              "    pm.expect(json.id).to.be.a(\"number\");",
+              "});",
+              "",
+              "// Save ID for later",
+              "pm.environment.set(\"note_id\", json.id);"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Get Note by ID (GET /api/v1/notes/:id)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/v1/notes/{{note_id}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "notes", "{{note_id}}"]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200 – note retrieved\", () => { pm.response.to.have.status(200); });",
+              "",
+              "const note = pm.response.json();",
+              "",
+              "pm.test(\"Note contains required properties\", () => {",
+              "    pm.expect(note).to.have.property(\"id\");",
+              "    pm.expect(note).to.have.property(\"title\");",
+              "    pm.expect(note).to.have.property(\"content\");",
+              "    pm.expect(note).to.have.property(\"created_at\");",
+              "});",
+              "",
+              "pm.test(\"Correct types\", () => {",
+              "    pm.expect(note.id).to.be.a(\"number\");",
+              "    pm.expect(note.title).to.be.a(\"string\");",
+              "    pm.expect(note.content).to.be.a(\"string\");",
+              "});",
+              "",
+              "pm.test(\"ID matches previously created note\", () => {",
+              "    pm.expect(note.id.toString()).to.eql(pm.environment.get(\"note_id\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Get Notes (GET /api/v1/notes)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/v1/notes?limit=5&last_id={{last_id}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "notes"],
+          "query": [
+            { "key": "limit", "value": "5" },
+            { "key": "last_id", "value": "{{last_id}}", "disabled": false }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200 – list retrieved\", () => { pm.response.to.have.status(200); });",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Response contains notes[] and has_more\", () => {",
+              "    pm.expect(json).to.have.property(\"notes\");",
+              "    pm.expect(json.notes).to.be.an(\"array\");",
+              "    pm.expect(json).to.have.property(\"has_more\");",
+              "});",
+              "",
+              "if (json.notes.length > 0) {",
+              "    const n = json.notes[0];",
+              "    pm.test(\"Note item follows Note schema\", () => {",
+              "        pm.expect(n).to.have.property(\"id\");",
+              "        pm.expect(n).to.have.property(\"title\");",
+              "        pm.expect(n).to.have.property(\"content\");",
+              "    });",
+              "",
+              "    const last_id = json.notes[json.notes.length - 1].id;",
+              "    pm.environment.set(\"last_id\", last_id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "GET /notes?limit=999 (409 expected)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/v1/notes?limit=999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "notes"],
+          "query": [
+            { "key": "limit", "value": "999" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 409 – limit exceeded\", () => { pm.response.to.have.status(409); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Error schema returned\", () => { pm.expect(json).to.have.property(\"error\"); });"
+            ]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Get Non-existent Note (404 expected)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:8080/api/v1/notes/999999",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "notes", "999999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 404 – not found\", () => { pm.response.to.have.status(404); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Error schema returned\", () => { pm.expect(json).to.have.property(\"error\"); });"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    { "key": "note_id", "value": "" },
+    { "key": "last_id", "value": "" }
+  ]
 }
